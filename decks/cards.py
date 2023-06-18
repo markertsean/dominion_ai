@@ -60,7 +60,7 @@ class CardPile:
         self.name  = name
 
         self.stack = stack
-        assert isinstance(self.stack,(list,None))
+        assert isinstance(self.stack,list) or (self.stack is None)
         if (self.stack is None):
             self.stack = []
         self.valid_stack_check()
