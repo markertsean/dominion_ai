@@ -114,3 +114,24 @@ class CardPile:
 
     def shuffle(self):
         shuffle(self.stack)
+
+
+class CardSupply:
+    def __init__(self,card,n):
+        assert isinstance(card,DominionCard)
+        assert isinstance(n,int) and n>0
+        self.card = card
+        self.n = n
+
+    def gain(self):
+        assert self.n>0
+        self.n -= 1
+        return self.card
+
+    def return_supply(self,card):
+        assert card == self.card
+        del card
+        self.n += 1
+
+    def count(self):
+        return self.n

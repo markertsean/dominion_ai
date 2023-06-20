@@ -26,4 +26,4 @@ class Player:
         ret_str += "\n\tDraw   : {}".format(self.draw_pile.count_cards())
         ret_str += "\n\tHand   : {}".format(self.hand.count_cards())
         ret_str += "\n\tDiscard: {}".format(self.discard_pile.count_cards())
-        return ret_str
+        return ret_str+"\n"
