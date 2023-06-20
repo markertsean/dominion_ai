@@ -19,3 +19,11 @@ class Player:
         self.discard_pile = cards.CardPile( 'discard' )
 
         self.victory_points = 0
+
+    def __repr__(self):
+        ret_str  = "Player: "+self.name
+        ret_str += "\n\tVP     : {}".format(self.victory_points)
+        ret_str += "\n\tDraw   : {}".format(self.draw_pile.count_cards())
+        ret_str += "\n\tHand   : {}".format(self.hand.count_cards())
+        ret_str += "\n\tDiscard: {}".format(self.discard_pile.count_cards())
+        return ret_str
