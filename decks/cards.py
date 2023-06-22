@@ -54,6 +54,8 @@ class DominionCard(GenericCard):
         self.type    = card_type
         self.vp      = victory_points
 
+        if ( isinstance(self.type,str) ):
+            self.type = [self.type]
 
 class CardPile:
     def __init__(self,name,stack=None):
@@ -115,6 +117,33 @@ class CardPile:
     def shuffle(self):
         shuffle(self.stack)
 
+    def draw_from_supply(self,supply,n=1,bottom=False):
+        assert isinstance(supply,CardSupply)
+        n_draw = min(n,supply.count())
+        supply.remove( n_draw )
+
+        cards = []
+        for i in range(0,n_draw):
+            cards.append(supply.get_card())
+
+        if ( bottom ):
+            self.bottomdeck(cards)
+        else:
+            self.topdeck(cards)
+        return n_draw
+
+    def draw_from_pile(self,pile,n=1,bottom=False):
+        assert isinstance(pile,CardPile)
+        n_draw = min(n,pile.n_cards())
+
+        cards = pile.draw(n_draw)
+
+        if ( bottom ):
+            self.bottomdeck(cards)
+        else:
+            self.topdeck(cards)
+        return n_draw
+
 
 class CardSupply:
     def __init__(self,card,n):
@@ -122,6 +151,14 @@ class CardSupply:
         assert isinstance(n,int) and n>0
         self.card = card
         self.n = n
+        self.orig_n = n
+
+    def __str__(self):
+        out_str = "Supply for card '{}', {} cards\n".format(self.card.name,self.n)
+        return out_str+'\n'
+
+    def get_card(self):
+        return self.card
 
     def gain(self):
         assert self.n>0
@@ -135,3 +172,11 @@ class CardSupply:
 
     def count(self):
         return self.n
+
+    def remove(self,n=1):
+        assert n>=0
+        n_remove = min(self.n,n)
+        self.n -= n_remove
+
+    def copy(self):
+        return CardSupply( self.card, self.orig_n )

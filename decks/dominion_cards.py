@@ -10,12 +10,14 @@ copper = DominionCard(
     name='copper',
     cost=0,
     card_type='treasure',
+    coin=1,
 )
 
 silver = DominionCard(
     name='silver',
     cost=3,
     card_type='treasure',
+    coin=2,
 )
 
 gold = DominionCard(
@@ -327,6 +329,11 @@ copper_supply = CardSupply(copper,60)
 silver_supply = CardSupply(silver,40)
 gold_supply   = CardSupply(gold  ,30)
 
+treasure_reference = {
+    'copper': copper,
+    'silver': silver,
+    'gold'  : gold,
+}
 
 # VP supplies
 curse_supply_2p = CardSupply(estate  ,10)
