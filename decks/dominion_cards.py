@@ -3,6 +3,7 @@ import sys
 sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
 
 from decks.cards import DominionCard, CardSupply
+import decks.dominion_card_abilities as dca
 
 # Treasure
 
@@ -41,7 +42,7 @@ estate = DominionCard(
     name='estate',
     cost=2,
     card_type='victory',
-    victory_points=2,
+    victory_points=1,
 )
 
 duchy = DominionCard(
@@ -336,9 +337,9 @@ treasure_reference = {
 }
 
 # VP supplies
-curse_supply_2p = CardSupply(estate  ,10)
-curse_supply_3p = CardSupply(estate  ,20)
-curse_supply_4p = CardSupply(estate  ,30)
+curse_supply_2p = CardSupply(curse   ,10)
+curse_supply_3p = CardSupply(curse   ,20)
+curse_supply_4p = CardSupply(curse   ,30)
 estate_supply   = CardSupply(estate  ,24)
 duchy_supply    = CardSupply(duchy   ,12)
 province_supply = CardSupply(province,12)
