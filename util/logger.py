@@ -12,6 +12,7 @@ class GameLogger:
         self.logfile = None
         self.save_log = False
         self.active = False
+        self.print_log = False
 
     def __del__(self):
         self.close_log()
@@ -22,6 +23,12 @@ class GameLogger:
         log_path = path+'data/logs/'
         os.makedirs(log_path,exist_ok=True)
         return log_path+'game_log_'+time_str+'.log'
+
+    def __repr__(self):
+        out_str = "Logger status:\n"
+        for key in self.__dict__:
+            out_str += "\t{:25s} =\t{}\n".format(key,self.__dict__[key])
+        return out_str
 
     def start_logger(self):
         self.save_log = True
@@ -38,10 +45,19 @@ class GameLogger:
     def deactivate(self):
         self.active = False
 
+    def activate_print_log(self):
+        self.print_log = True
+
+    def deactivate_print_log(self):
+        self.print_log = False
+
     def log(self,message):
-        if ( self.save_log and self.active ):
-            self.logfile.write(message+"\n")
-            self.logfile.flush()
+        if ( self.active ):
+            if ( self.print_log ):
+                print(message)
+            if ( self.save_log ):
+                self.logfile.write(message+"\n")
+                self.logfile.flush()
 
 
 game_logger = GameLogger()
