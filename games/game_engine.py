@@ -15,16 +15,31 @@ def validate_all_action_cards():
             assert card in action_cards, key+'\'s '+card+' card is not recognized'
 
 class DominionGame:
-    def __init__(self,kingdom,n_players,):
+    def __init__(self,kingdom,n_players,max_turns=100,logger=None):
+        assert (logger is None) or isinstance(logger,GameLogger)
+        self.logger = logger
+
         assert isinstance(n_players,int) and n_players > 0
         self.n_players = n_players
+        self.log("DG SETUP: set number of players to '{}'".format(self.n_players))
 
         assert kingdom in DominionGame.get_valid_kingdoms(), \
         'kingdom must be one of '+str(DominionGame.get_valid_kingdoms())
         self.kingdom_name = kingdom
+        self.log("DG SETUP: set kingdom to '{}'".format(self.kingdom_name))
 
         self.kingdom = self.generate_kingdom()
+        self.log("DG SETUP: created kingdom with cards = {}".format(
+            ' '.join(sorted(["'{}'".format(str(card)) for card in self.kingdom.keys()]))
+        ))
         self.trash = cards.CardPile('trash')
+
+        assert isinstance(max_turns,int) and (max_turns>0)
+        self.max_turns = max_turns
+
+    def log(self,m):
+        if (self.logger is not None):
+            self.logger.log(m)
 
     def get_premade_kingdom_dict():
         return dominion_cards.premade_kingdom_dict
@@ -46,12 +61,15 @@ class DominionGame:
         return n
 
     def victory_condition_met(self):
-        if (
-            (self.kingdom['province'].count() == 0) or
-            (self.get_n_depleted_supply_piles() == 3)
-        ):
-            return True
-        return False
+        n_depleted = self.get_n_depleted_supply_piles()
+        n_province = self.kingdom['province'].count()
+        victory = False
+        if ( ( n_province == 0) or ( n_depleted == 3) ):
+            victory = True
+        self.log("DG STATUS: victory returns '{}' - n_provinces = '{}', n_depleted = '{}'".format(
+            victory,n_province,n_depleted
+        ))
+        return victory
 
     def generate_kingdom(self):
         # Certain vp and treasure always present
@@ -110,13 +128,16 @@ class DominionGame:
         default_handsize = 5
 
         victory = False
-        turn = 0
+        turn = 1
         while not victory:
-            print("Turn: "+str(turn))
+            self.log("DG GAME: {}".format(30*'-'))
+            self.log("DG GAME: turn '{}'".format(str(turn)))
             for player in player_list:
+                self.log("DG GAME: {}".format('-'))
+                self.log("DG GAME: player turn - '"+str(player.name)+"'")
                 # Draw new hand, set things like turn_actions, buy, etc
                 player.start_turn()
-                print(player)
+
                 # Action
                 player.do_actions()
 
@@ -135,5 +156,5 @@ class DominionGame:
                     break
 
             turn += 1
-            if ( turn > 100 ):
+            if ( turn > self.max_turns ):
                 break
