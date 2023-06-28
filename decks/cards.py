@@ -42,6 +42,7 @@ class DominionCard(GenericCard):
         ,draw=None
         ,coin=None
         ,victory_points=None
+        ,text=None
     ):
         assert isinstance(name,str)
         self.name    = name
@@ -144,6 +145,8 @@ class CardPile:
             self.topdeck(cards)
         return n_draw
 
+    def wipe_stack(self):
+        self.stack = []
 
 class CardSupply:
     def __init__(self,card,n):
