@@ -66,7 +66,8 @@ base_action_cards = {
         name='adventurer',
         cost=6,
         card_type='action',
-        ability=\
+        ability=dca.adventurer,
+        text=\
         '''
         Reveal cards from your deck until you reveal 2 treasure cards.
         Put those treasure cards into your hand, and discard the other revealed cards.
@@ -77,7 +78,8 @@ base_action_cards = {
         name='bureaucrat',
         cost=4,
         card_type=['action','attack'],
-        ability=\
+        ability=dca.bureaucrat,
+        text=\
         '''
         Gail a silver card, put it on top of your deck.
         Each other player reveals a Victory card from his hand,
@@ -89,7 +91,8 @@ base_action_cards = {
         name='cellar',
         cost=2,
         card_type='action',
-        ability=\
+        ability=dca.cellar,
+        text=\
         '''
         Discard any number of cards. +1 card per card discarded.
         ''',
@@ -100,7 +103,8 @@ base_action_cards = {
         name='chancellor',
         cost=3,
         card_type='action',
-        ability=\
+        ability=dca.chancellor,
+        text=\
         '''
         You may immediately put your deck into your discard pile
         ''',
@@ -111,7 +115,8 @@ base_action_cards = {
         name='chapel',
         cost=2,
         card_type='action',
-        ability=\
+        ability=dca.chapel,
+        text=\
         '''
         Trash up to 4 cards from your hand
         '''
@@ -121,7 +126,8 @@ base_action_cards = {
         name='council room',
         cost=5,
         card_type='action',
-        ability=\
+        ability=dca.council_room,
+        text=\
         '''
         Each other player draws a card
         ''',
@@ -133,7 +139,8 @@ base_action_cards = {
         name='feast',
         cost=4,
         card_type='action',
-        ability=\
+        ability=dca.feast,
+        text=\
         '''
         Trash this card, gain a card costing up to 5
         '''
@@ -152,7 +159,8 @@ base_action_cards = {
         name='gardens',
         cost=4,
         card_type='victory',
-        ability=\
+        ability=dca.gardens,
+        text=\
         '''
         Worth 1 vp for every 10 cards in your deck (rounded down)
         '''
@@ -170,7 +178,8 @@ base_action_cards = {
         name='library',
         cost=5,
         card_type='action',
-        ability=\
+        ability=dca.library,
+        text=\
         '''
         Draw until you have 7 cards in hand.
         You may set aside any action cards drawn this way, as you draw them.
@@ -192,7 +201,8 @@ base_action_cards = {
         name='militia',
         cost=4,
         card_type=['action','attack'],
-        ability=\
+        ability=dca.militia,
+        text=\
         '''
         Each other player discards down to 3 cards in his hand
         ''',
@@ -203,7 +213,8 @@ base_action_cards = {
         name='mine',
         cost=5,
         card_type='action',
-        ability=\
+        ability=dca.mine,
+        text=\
         '''
         Trash a treasure card from your hand.
         Gain a treasure card costing up to 3 more, put it in your hand.
@@ -214,7 +225,8 @@ base_action_cards = {
         name='moat',
         cost=2,
         card_type=['action','reaction'],
-        ability=\
+        ability=dca.moat,
+        text=\
         '''
         When another player plays an attack card, you may reveal this from your hand.
         If you do, you are unaffected by the attack.
@@ -226,7 +238,8 @@ base_action_cards = {
         name='moneylender',
         cost=4,
         card_type='action',
-        ability=\
+        ability=dca.moneylender,
+        text=\
         '''
         Trash a copper from your hand. If you do, +3 coin
         '''
@@ -236,7 +249,8 @@ base_action_cards = {
         name='remodel',
         cost=4,
         card_type='action',
-        ability=\
+        ability=dca.remodel,
+        text=\
         '''
         Trash a card from your hand.
         Gain a card costing up to 2 coin more than the trashed car.
@@ -254,7 +268,8 @@ base_action_cards = {
         name='spy',
         cost=4,
         card_type=['action','attack'],
-        ability=\
+        ability=dca.spy,
+        text=\
         '''
         Each player including you reveals the top card of hist deck
         and either discards it or puts it back, your choice
@@ -267,7 +282,8 @@ base_action_cards = {
         name='thief',
         cost=4,
         card_type=['action','attack'],
-        ability=\
+        ability=dca.thief,
+        text=\
         '''
         Each other player reveals the top 2 cards of his deck.
         If they revealed any treasure cards, they trash one of
@@ -280,7 +296,8 @@ base_action_cards = {
         name='throne room',
         cost=4,
         card_type='action',
-        ability=\
+        ability=dca.throne_room,
+        text=\
         '''
         Choose an action card in your hand. Play it twice.
         '''
@@ -298,7 +315,8 @@ base_action_cards = {
         name='witch',
         cost=5,
         card_type=['action','attack'],
-        ability=\
+        ability=dca.witch,
+        text=\
         '''
         Each other player gains a curse card
         ''',
@@ -317,7 +335,8 @@ base_action_cards = {
         name='workshop',
         cost=3,
         card_type='action',
-        ability=\
+        ability=dca.workshop,
+        text=\
         '''
         Gain a card costing up to 4
         '''
