@@ -4,6 +4,7 @@ import sys
 sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
 
 from decks import cards,dominion_cards
+from util.logger import GameLogger
 
 class Player:
     def __init__(
@@ -64,6 +65,19 @@ class Player:
     def get_n_draw(self):
         return self.n_default_draw
 
+    def get_all_card_count(self):
+        all_card_list = []
+        for pile in [
+            self.hand,
+            self.draw_pile,
+            self.discard_pile,
+            self.play_pile,
+        ]:
+            for card in pile.stack:
+                all_card_list.append(card)
+        all_card_pile = cards.CardPile('all',all_card_list)
+        return all_card_pile.count_cards()
+
     def discard_shuffle_to_draw(self):
         self.discard_pile.shuffle()
         return self.draw_pile.draw_from_pile(self.discard_pile,self.discard_pile.n_cards())
@@ -74,6 +88,10 @@ class Player:
         if defended:
             self.log("defends against attack by showing '{}'".format('moat'))
         return defended
+
+    def wipe_all_stacks(self):
+        for pile in [self.hand,self.draw_pile,self.discard_pile,self.play_pile]:
+            pile.wipe_stack()
 
     # TODO: implement real decision algorithm
     def decide_discard(self,cards,n_max=None):
@@ -95,7 +113,7 @@ class Player:
                 n += 1
             i += 1
         discard_list = []
-        discard_str = "discarded"
+        discard_str = "discarded with choice"
         any_discard = False
         for i in index_list[::-1]:
             any_discard=True
@@ -186,9 +204,10 @@ class Player:
         assert isinstance(n_draw,int)
         n_in_pile = self.draw_pile.n_cards()
         n_drawn = self.hand.draw_from_pile( self.draw_pile, n_draw )
-        self.log("attempted to draw '{}' cards, drew '{}' from draw pile with '{}'".format(
-            n_draw,n_drawn,n_in_pile
-        ))
+        #DEBUG
+        #self.log("attempted to draw '{}' cards, drew '{}' from draw pile with '{}'".format(
+        #    n_draw,n_drawn,n_in_pile
+        #))
         # Couldn't draw full hand from discard pile
         if ( n_drawn != n_draw ):
             # Shuffle discard to make new draw pile
@@ -197,13 +216,15 @@ class Player:
             n_in_pile = self.draw_pile.n_cards()
             n_drawn_new = self.hand.draw_from_pile( self.draw_pile, n_remain )
             n_drawn += n_drawn_new
-            self.log("shuffled discard, attempted to redraw '{}' cards, drew '{}' from draw pile with '{}'".format(
-                n_remain, n_drawn_new, n_in_pile
-            ))
-        self.log("drew {}, hand contains - {}".format(
-            ' '.join(["'{}'".format(card.name) for card in self.hand.stack[-n_drawn:] ]),
-            ' '.join(["'{}'".format(card.name) for card in self.hand.stack ])
-        ))
+            #DEBUG
+            #self.log("shuffled discard, attempted to redraw '{}' cards, drew '{}' from draw pile with '{}'".format(
+            #    n_remain, n_drawn_new, n_in_pile
+            #))
+        #DEBUG
+        #self.log("drew {}, hand contains - {}".format(
+        #    ' '.join(["'{}'".format(card.name) for card in self.hand.stack[-n_drawn:] ]),
+        #    ' '.join(["'{}'".format(card.name) for card in self.hand.stack ])
+        #))
 
         return n_drawn
 
@@ -212,15 +233,21 @@ class Player:
         self.turn_buy    = self.get_n_buy()
         self.turn_coin   = self.get_n_coin()
         self.turn_draw   = self.get_n_draw()
-        self.log("starting turn with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
-            self.turn_action,
-            self.turn_buy,
-            self.turn_coin,
-            self.hand.n_cards()#turn_draw
-        ))
-        return self.hand.n_cards()#self.draw_to_hand( self.turn_draw )
+        #DEBUG
+        #self.log("starting turn with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
+        #    self.turn_action,
+        #    self.turn_buy,
+        #    self.turn_coin,
+        #    self.hand.n_cards()#turn_draw
+        #))
 
-    def play_card(self,card):
+        self.log("starting turn with cards {}".format(
+            " ".join(sorted([card.name for card in self.hand.stack]))
+        ))
+
+        return self.hand.n_cards()
+
+    def play_card(self,card,inp_dict):
 
         for c, p in zip(
             [card.action,card.buy,card.coin,card.draw],
@@ -228,18 +255,32 @@ class Player:
         ):
             if ( c is not None ):
                 p += c
+        if (
+            (card.draw is not None) and
+            (isinstance(card.draw,int))
+        ):
+            self.draw_to_hand(card.draw)
         # TODO: implement all the abilities, and draw properly
+        if ( card.ability is not None ):
+            card.ability( inp_dict )
 
-    def do_actions(self):
+    def do_actions(self,opponents,kingdom,trash):
+        inp_params = {
+            'player':self,
+            'opponents':opponents,
+            'kingdom':kingdom,
+            'trash':trash,
+        }
         new_card = True
         action_card_list = [None]
         while self.turn_action > 0:
-            self.log("action phase with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
-                self.turn_action,
-                self.turn_buy,
-                self.turn_coin,
-                self.turn_draw
-            ))
+            #DEBUG
+            #self.log("action phase with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
+            #    self.turn_action,
+            #    self.turn_buy,
+            #    self.turn_coin,
+            #    self.turn_draw
+            #))
 
             # Will re-check when we gained a new card from our action
             if ( new_card ):
@@ -262,10 +303,11 @@ class Player:
                 self.hand.stack.remove(selected_card)
                 action_card_list.remove(selected_card)
                 self.play_pile.topdeck( selected_card )
-                new_card = self.play_card( selected_card )
-                self.log("played '{}'".format(selected_card.name))
+                new_card = self.play_card( selected_card, inp_params )
+                #DEBUG
+                #self.log("played '{}'".format(selected_card.name))
             else:
-                self.log('played nothing')
+                self.log('plays nothing')
 
             self.turn_action -= 1
 
@@ -284,7 +326,8 @@ class Player:
     def do_buy(self,input_kingdom):
         self.log("has '{}' buy".format(self.turn_buy))
         for buy_i in range(0,self.turn_buy):
-            self.log("has '{}' coin".format(self.turn_coin))
+            #DEBUG
+            #self.log("has '{}' coin".format(self.turn_coin))
             card_count_list = [(None,10,)]
             for supply in input_kingdom:
                 card = input_kingdom[supply].get_card()
@@ -311,9 +354,10 @@ class Player:
             self.discard_pile.draw_from_pile( self.hand, n_hand ) +
             self.discard_pile.draw_from_pile( self.play_pile, n_play )
         )
-        self.log("cleanup '{}' cards in hand, '{}' cards in play, '{}' go into the discard".format(
-            n_hand, n_play, n_returned
-        ))
+        #DEBUG
+        #self.log("cleanup '{}' cards in hand, '{}' cards in play, '{}' go into the discard".format(
+        #    n_hand, n_play, n_returned
+        #))
         n_draw = self.draw_to_hand( self.turn_draw )
         self.log("drew '{}' cards".format(
             n_draw

@@ -4,7 +4,7 @@ import sys
 sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
 
 from decks import cards,dominion_cards
-
+from util.logger import GameLogger
 
 def validate_all_action_cards():
     kingdom_dict = dominion_cards.premade_kingdom_dict
@@ -13,6 +13,9 @@ def validate_all_action_cards():
         kingdom = kingdom_dict[key]
         for card in kingdom:
             assert card in action_cards, key+'\'s '+card+' card is not recognized'
+
+def opponent_gen(player,player_list):
+    return [opp for opp in player_list if opp != player]
 
 class DominionGame:
     def __init__(self,kingdom,n_players,max_turns=100,logger=None):
@@ -110,6 +113,34 @@ class DominionGame:
             kingdom[s.get_card().name] = s.copy()
         return kingdom
 
+    def calc_vp(self,player_list):
+        cards_with_vp_ability = ['gardens']
+
+        vp_dict = {}
+        for player in player_list:
+            inp_params = {
+                'player':player,
+                'opponents':opponent_gen(player,player_list),
+                'kingdom':self.kingdom,
+                'trash':self.trash,
+            }
+            victory_points = 0
+            for stack in [
+                    player.hand.stack,
+                    player.draw_pile.stack,
+                    player.discard_pile.stack,
+                    player.play_pile.stack
+            ]:
+                for card in stack:
+                    if ( card.vp is not None ):
+                        victory_points += card.vp
+                    if ( card.name in cards_with_vp_ability ):
+                        victory_points += card.ability(inp_params)
+
+            player.victory_points = victory_points
+            vp_dict[player.name] = victory_points
+        return vp_dict
+
     def run_game(self,player_list):
         '''
         Deal out 3 estate + 7 copper to each player every standard game
@@ -124,6 +155,7 @@ class DominionGame:
         for player in player_list:
             player.discard_pile.draw_from_supply( self.kingdom['copper'], 7 )
             player.discard_pile.draw_from_supply( self.kingdom['estate'], 3 )
+            player.draw_to_hand()
 
         default_handsize = 5
 
@@ -139,7 +171,11 @@ class DominionGame:
                 player.start_turn()
 
                 # Action
-                player.do_actions()
+                player.do_actions(
+                    opponent_gen(player,player_list),
+                    self.kingdom,
+                    self.trash
+                )
 
                 # Spend treasure
                 player.spend_treasure()
@@ -158,3 +194,11 @@ class DominionGame:
             turn += 1
             if ( turn > self.max_turns ):
                 break
+
+        point_dict = self.calc_vp(player_list)
+        card_dict = {}
+        for player in player_list:
+            card_dict = player.get_all_card_count()
+            player.wipe_all_stacks()
+
+        return point_dict, card_dict
