@@ -28,9 +28,15 @@ def validate( inp ):
     assert 'log' in inp
     assert isinstance(inp['log'],bool) or ( isinstance(inp['log'],float) and (inp['log']>0) and (inp['log']<=1.0) )
 
+    assert 'print' in inp
+    assert isinstance(inp['print'],bool)
+
     assert 'max_turns' in inp
     assert isinstance(inp['max_turns'],int) and (inp['max_turns'] > 0)
-    
+
+    assert 'kingdom' in inp
+    assert isinstance(inp['kingdom'],str)
+
     for i in range(1,5):
         s = str(i)
 
