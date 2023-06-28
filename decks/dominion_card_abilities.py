@@ -1,4 +1,11 @@
+import random
+import sys
+
+sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
+
+
 from decks.cards import DominionCard, CardPile, CardSupply
+from decks import dominion_cards
 from util.logger import GameLogger
 
 '''
@@ -136,8 +143,8 @@ def feast( inp_params ):
 Worth 1 vp for every 10 cards in your deck (rounded down)
 '''
 def gardens( inp_params ):
-    player = inp_params['player']
     card_count = 0
+    player=inp_params['player']
     for pile in [player.hand,player.discard_pile,player.draw_pile]:
         card_count += pile.n_cards()
     return card_count//10
@@ -353,11 +360,11 @@ def throne_room( inp_params ):
     logstr += ", double plays '{}'".format(selected_card.name)
     player.log(logstr)
 
-    player.hand.stack.remove(selected_card)
+    player.hand.stack.remove( selected_card )
     player.play_pile.topdeck( selected_card )
-    player.play_card( selected_card )
+    player.play_card( selected_card, inp_params )
     player.log("played '{}'".format(selected_card.name))
-    player.play_card( selected_card )
+    player.play_card( selected_card, inp_params )
     player.log("played '{}'".format(selected_card.name))
 
 '''
