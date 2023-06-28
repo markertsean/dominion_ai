@@ -100,6 +100,7 @@ You may immediately put your deck into your discard pile
 '''
 def chancellor( inp_params ):
     player = inp_params['player']
+    player.log("played chancellor, placing deck onto discard")
     player.discard_pile.draw_from_pile( player.draw_pile, player.draw_pile.n_cards() )
 
 '''
@@ -108,7 +109,7 @@ Trash up to 4 cards from your hand
 def chapel( inp_params ):
     player = inp_params['player']
     trash  = inp_params['trash']
-    player.log('played chapel')
+    player.log('played chapel, trashing up to 4')
     trashed = player.decide_trash( player.hand, 4 )
     n_trash = len(trashed)
     trash.topdeck( trashed )
@@ -176,7 +177,7 @@ def library( inp_params ):
 Each other player discards down to 3 cards in his hand
 '''
 def militia( inp_params ):
-    inp_params['player'].log('plays militia')
+    inp_params['player'].log('plays militia, other players discard down to 3')
     for opp in inp_params['opponents']:
         if ( not opp.defends() and (opp.hand.n_cards()>3)):
             discard_list = opp.force_discard( opp.hand, opp.hand.n_cards()-3 )

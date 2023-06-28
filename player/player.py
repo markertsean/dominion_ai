@@ -354,10 +354,9 @@ class Player:
             self.discard_pile.draw_from_pile( self.hand, n_hand ) +
             self.discard_pile.draw_from_pile( self.play_pile, n_play )
         )
-        #DEBUG
-        #self.log("cleanup '{}' cards in hand, '{}' cards in play, '{}' go into the discard".format(
-        #    n_hand, n_play, n_returned
-        #))
+        self.log("cleanup '{}' cards in hand, '{}' cards in play, '{}' go into the discard".format(
+            n_hand, n_play, n_returned
+        ))
         n_draw = self.draw_to_hand( self.turn_draw )
         self.log("drew '{}' cards".format(
             n_draw
