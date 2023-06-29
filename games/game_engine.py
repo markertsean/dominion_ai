@@ -40,9 +40,9 @@ class DominionGame:
         assert isinstance(max_turns,int) and (max_turns>0)
         self.max_turns = max_turns
 
-    def log(self,m):
+    def log(self,m,debug=False):
         if (self.logger is not None):
-            self.logger.log(m)
+            self.logger.log(m,debug=debug)
 
     def get_premade_kingdom_dict():
         return dominion_cards.premade_kingdom_dict

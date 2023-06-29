@@ -49,9 +49,9 @@ class Player:
         ret_str += "\n\tDiscard: {}".format(self.discard_pile.count_cards())
         return ret_str+"\n"
 
-    def log(self,m):
+    def log(self,m,debug=False):
         if (self.logger is not None):
-            self.logger.log("PLAYER {}: ".format(self.name)+m)
+            self.logger.log("PLAYER {}: ".format(self.name)+m,debug=debug)
 
     def get_n_action(self):
         return self.n_default_action

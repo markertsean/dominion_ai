@@ -54,7 +54,7 @@ class GameLogger:
         self.print_log = False
 
     def log(self,message,debug=False):
-        if ( debug and !self.debug ):
+        if ( debug and not self.debug ):
             return
         if ( self.active ):
             if ( self.print_log ):
