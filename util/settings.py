@@ -31,6 +31,9 @@ def validate( inp ):
     assert 'print' in inp
     assert isinstance(inp['print'],bool)
 
+    assert 'debug' in inp
+    assert isinstance(inp['debug'],bool)
+
     assert 'max_turns' in inp
     assert isinstance(inp['max_turns'],int) and (inp['max_turns'] > 0)
 

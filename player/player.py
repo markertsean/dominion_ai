@@ -204,10 +204,10 @@ class Player:
         assert isinstance(n_draw,int)
         n_in_pile = self.draw_pile.n_cards()
         n_drawn = self.hand.draw_from_pile( self.draw_pile, n_draw )
-        #DEBUG
-        #self.log("attempted to draw '{}' cards, drew '{}' from draw pile with '{}'".format(
-        #    n_draw,n_drawn,n_in_pile
-        #))
+        self.log("attempted to draw '{}' cards, drew '{}' from draw pile with '{}'".format(
+            n_draw,n_drawn,n_in_pile
+        ),debug=True)
+
         # Couldn't draw full hand from discard pile
         if ( n_drawn != n_draw ):
             # Shuffle discard to make new draw pile
@@ -216,15 +216,15 @@ class Player:
             n_in_pile = self.draw_pile.n_cards()
             n_drawn_new = self.hand.draw_from_pile( self.draw_pile, n_remain )
             n_drawn += n_drawn_new
-            #DEBUG
-            #self.log("shuffled discard, attempted to redraw '{}' cards, drew '{}' from draw pile with '{}'".format(
-            #    n_remain, n_drawn_new, n_in_pile
-            #))
-        #DEBUG
-        #self.log("drew {}, hand contains - {}".format(
-        #    ' '.join(["'{}'".format(card.name) for card in self.hand.stack[-n_drawn:] ]),
-        #    ' '.join(["'{}'".format(card.name) for card in self.hand.stack ])
-        #))
+
+            self.log("shuffled discard, attempted to redraw '{}' cards, drew '{}' from draw pile with '{}'".format(
+                n_remain, n_drawn_new, n_in_pile
+            ),debug=True)
+
+        self.log("drew {}, hand contains - {}".format(
+            ' '.join(["'{}'".format(card.name) for card in self.hand.stack[-n_drawn:] ]),
+            ' '.join(["'{}'".format(card.name) for card in self.hand.stack ])
+        ),debug=True)
 
         return n_drawn
 
@@ -233,13 +233,13 @@ class Player:
         self.turn_buy    = self.get_n_buy()
         self.turn_coin   = self.get_n_coin()
         self.turn_draw   = self.get_n_draw()
-        #DEBUG
-        #self.log("starting turn with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
-        #    self.turn_action,
-        #    self.turn_buy,
-        #    self.turn_coin,
-        #    self.hand.n_cards()#turn_draw
-        #))
+
+        self.log("starting turn with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
+            self.turn_action,
+            self.turn_buy,
+            self.turn_coin,
+            self.hand.n_cards()
+        ),debug=True)
 
         self.log("starting turn with cards {}".format(
             " ".join(sorted([card.name for card in self.hand.stack]))
@@ -274,13 +274,12 @@ class Player:
         new_card = True
         action_card_list = [None]
         while self.turn_action > 0:
-            #DEBUG
-            #self.log("action phase with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
-            #    self.turn_action,
-            #    self.turn_buy,
-            #    self.turn_coin,
-            #    self.turn_draw
-            #))
+            self.log("action phase with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
+                self.turn_action,
+                self.turn_buy,
+                self.turn_coin,
+                self.turn_draw
+            ),debug=True)
 
             # Will re-check when we gained a new card from our action
             if ( new_card ):
@@ -304,8 +303,8 @@ class Player:
                 action_card_list.remove(selected_card)
                 self.play_pile.topdeck( selected_card )
                 new_card = self.play_card( selected_card, inp_params )
-                #DEBUG
-                #self.log("played '{}'".format(selected_card.name))
+
+                self.log("played '{}'".format(selected_card.name),debug=True)
             else:
                 self.log('plays nothing')
 
@@ -326,8 +325,9 @@ class Player:
     def do_buy(self,input_kingdom):
         self.log("has '{}' buy".format(self.turn_buy))
         for buy_i in range(0,self.turn_buy):
-            #DEBUG
-            #self.log("has '{}' coin".format(self.turn_coin))
+
+            self.log("has '{}' coin".format(self.turn_coin),debug=True)
+
             card_count_list = [(None,10,)]
             for supply in input_kingdom:
                 card = input_kingdom[supply].get_card()

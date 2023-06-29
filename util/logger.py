@@ -13,6 +13,7 @@ class GameLogger:
         self.save_log = False
         self.active = False
         self.print_log = False
+        self.debug = False
 
     def __del__(self):
         self.close_log()
@@ -30,8 +31,9 @@ class GameLogger:
             out_str += "\t{:25s} =\t{}\n".format(key,self.__dict__[key])
         return out_str
 
-    def start_logger(self):
+    def start_logger(self,debug=False):
         self.save_log = True
+        self.debug = debug
         self.logfile_name = self.__get_full_log_file_name__()
         self.logfile = open( self.logfile_name, 'a' )
 
@@ -51,13 +53,16 @@ class GameLogger:
     def deactivate_print_log(self):
         self.print_log = False
 
-    def log(self,message):
+    def log(self,message,debug=False):
+        if ( debug and !self.debug ):
+            return
         if ( self.active ):
             if ( self.print_log ):
                 print(message)
             if ( self.save_log ):
                 self.logfile.write(message+"\n")
                 self.logfile.flush()
+        return
 
 
 game_logger = GameLogger()
