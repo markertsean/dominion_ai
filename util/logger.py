@@ -55,7 +55,7 @@ class GameLogger:
 
     def log(self,message,debug=False):
         if ( debug and not self.debug ):
-            return
+            return 
         if ( self.active ):
             if ( self.print_log ):
                 print(message)
@@ -66,3 +66,41 @@ class GameLogger:
 
 
 game_logger = GameLogger()
+
+
+class GameResultsLogger:
+    def __init__(self):
+        self.logfile_name = None
+        self.logfile = None
+        self.save_log = False
+
+    def __del__(self):
+        self.close_log()
+
+    def __get_full_log_file_name__(self):
+        time_str = time.strftime('%Y%m%d_%H%M%S')
+        path = project_path
+        log_path = path+'data/game_results/'
+        os.makedirs(log_path,exist_ok=True)
+        return log_path+'game_results_'+time_str+'.log'
+
+    def __repr__(self):
+        out_str = "Result status:\n"
+        for key in self.__dict__:
+            out_str += "\t{:25s} =\t{}\n".format(key,self.__dict__[key])
+        return out_str
+
+    def start_logger(self):
+        self.save_log = True
+        self.logfile_name = self.__get_full_log_file_name__()
+        self.logfile = open( self.logfile_name, 'a' )
+
+    def close_log(self):
+        if ( self.save_log ):
+            self.logfile.close()
+
+    def log(self,message,debug=False):
+        if ( self.save_log ):
+            self.logfile.write(message+"\n")
+            self.logfile.flush()
+        return
