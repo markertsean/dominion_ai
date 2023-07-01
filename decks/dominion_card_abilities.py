@@ -245,10 +245,13 @@ Gain a card costing up to 2 coin more than the trashed card.
 '''
 def remodel( inp_params ):
     player  = inp_params['player']
-    player.log("plays feast, trashing a feast and gaining card up to 5")
+    player.log("plays remodel, trashing a card and gaining one worth 2 more")
     # TODO: better logic
-    card = player.force_trash( player.hand, 1 )[0]
-    player.hand.stack.remove( card )
+    cards = player.force_trash( player.hand, 1 )
+    if (len(cards)==0):
+        player.log("no cards in hand, nothing to trash")
+        return
+    card = cards[0]
     inp_params['trash'].topdeck( card )
     temp_coins = player.turn_coin
     temp_buys  = player.turn_buy

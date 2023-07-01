@@ -198,7 +198,7 @@ class DominionGame:
         point_dict = self.calc_vp(player_list)
         card_dict = {}
         for player in player_list:
-            card_dict = player.get_all_card_count()
+            card_dict[player.name] = player.get_all_card_count()
             player.wipe_all_stacks()
 
         return point_dict, card_dict
