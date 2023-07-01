@@ -1,3 +1,5 @@
+import os
+
 def interpret( val ):
     assert isinstance(val,str)
     if ( val.isnumeric() ):
@@ -73,6 +75,8 @@ player_n_brain_output = File name, if none provided, will copy input name for fi
 '''
 def read_settings( filename, print_result=False ):
     inp_settings = {}
+    assert isinstance(filename,str), 'input file name must be a string!'
+    assert os.path.exists(filename), filename+" does not exist!"
     with open(filename) as f:
         for full_line in f:
             line=full_line.strip()
