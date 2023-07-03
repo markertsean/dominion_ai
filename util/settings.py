@@ -1,4 +1,9 @@
 import os
+import sys
+
+sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
+
+from brains.buy_brains import buy_brain_dict
 
 def interpret( val ):
     assert isinstance(val,str)
@@ -25,7 +30,8 @@ def validate( inp ):
 
     assert 'n_games' in inp
     assert isinstance(inp['n_games'],int)
-    assert inp['n_games'] > 0
+    # 0 useful for debugging
+    assert inp['n_games'] >= 0
 
     assert 'log' in inp
     assert isinstance(inp['log'],bool) or ( isinstance(inp['log'],float) and (inp['log']>0) and (inp['log']<=1.0) )
@@ -45,10 +51,25 @@ def validate( inp ):
     for i in range(1,5):
         s = str(i)
 
+        #TODO: remove for more specific brains
         key = "player_"+s+"_brain"
         if ( key in inp ):
             assert isinstance(inp[key],str) or (inp[key] is None), key+' must be a string, recieved "'+str(inp[key])+'"'
             # TODO: check for file exist once implement files
+
+        key = "player_"+s+"_buy_brain"
+        if ( key in inp ):
+            val = inp[key]
+            assert isinstance(val,str) or (val is None), key+' must be a string, recieved "'+str(inp[key])+'"'
+            if ( val is not None ):
+                val_num=None
+                if ( (val[-1].isnumeric()) ):
+                    val_num = val[-1]
+                    val = val[:-1].strip()
+                    inp[key+"_n_lower"] = int(val_num)
+                assert ( val in buy_brain_dict.keys() ),key+"must be one of: "+str(buy_brain_dict.keys())
+                inp[key] = val
+                # TODO: check for file exist once implement files
 
         key = key+"_output"
         if ( key in inp ):

@@ -14,6 +14,36 @@ from games import game_engine
 from util import settings
 from util.logger import GameResultsLogger
 from util.logger import game_logger as gamelog
+from brains import buy_brains
+
+def init_players( inp_settings ):
+    player_names = ['Alice','Bill','Cindy','Dan']
+    player_list = []
+    for i in range(0,inp_settings['n_players']):
+
+        p_str = "player_{}".format(i+1)
+
+        # Set up buy_brain, default to 0
+        buy_brain = buy_brains.buy_brain_dict['random']()
+        bb_str = p_str+"_buy_brain"
+        if (
+            (bb_str in inp_settings.keys()) and
+            (inp_settings[bb_str] is not None ) and
+            (inp_settings[bb_str] != 'random' )
+        ):
+            n_lower = 0
+            brain = buy_brains.buy_brain_dict[ inp_settings[bb_str] ]
+            if ( bb_str+"_n_lower" in inp_settings.keys() ):
+                n_lower = inp_settings[bb_str+"_n_lower"]
+            buy_brain = brain(n_lower)
+
+        player_list.append( Player(
+            player_names[i],
+            buy_brain=buy_brain,
+            logger=gamelog
+        ))
+
+    return player_list
 
 
 '''
@@ -48,10 +78,9 @@ def main( config_fn ):
         gamelog.log("SETTING: {}={}".format(key,inp_settings[key]))
 
     # Set up players
-    player_names = ['Alice','Bill','Cindy','Dan']
-    player_list = []
-    for i in range(0,inp_settings['n_players']):
-        player_list.append( Player( player_names[i], logger=gamelog ) )
+    player_list = init_players( inp_settings )
+    for p in player_list:
+        print(p.buy_brain)
     old_player_order_list = [player_list[-1]] + player_list[:-1]
 
     win_list = []

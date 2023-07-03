@@ -5,12 +5,14 @@ sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
 
 from decks import cards,dominion_cards
 from util.logger import GameLogger
+from brains import buy_brains
 
 class Player:
     def __init__(
         self,
         name,
-        logger=None
+        buy_brain=None,
+        logger=None,
     ):
         self.name = name
 
@@ -36,6 +38,10 @@ class Player:
         self.turn_buy = 0
         self.turn_coin = 0
         self.turn_draw = 0
+
+        self.buy_brain = buy_brain
+        if ( self.buy_brain is None ):
+            self.buy_brain = buy_brains.buy_brain_dict['random']
 
         for key in self.__dict__.keys():
             if ( 'default' in key ):
@@ -336,8 +342,11 @@ class Player:
                         ( card, input_kingdom[supply].count(), )
                     )
 
-            # TODO: Make brain classes and move random junk to there
-            buy_card, count = random.choice( card_count_list )
+            brain_inputs = {
+                'kingdom_counts':card_count_list
+            }
+            buy_card = self.buy_brain.choose_buy( brain_inputs )
+
             self.log("purchases '{}' for '{}'".format(
                 buy_card.name if isinstance(buy_card,cards.DominionCard) else None,
                 buy_card.cost if isinstance(buy_card,cards.DominionCard) else 0,
