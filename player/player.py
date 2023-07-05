@@ -2,16 +2,16 @@ import random
 import sys
 
 sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
-
 from decks import cards,dominion_cards
 from util.logger import GameLogger
-from brains import buy_brains
+from brains import buy_brains,action_brains
 
 class Player:
     def __init__(
         self,
         name,
         buy_brain=None,
+        action_brain=None,
         logger=None,
     ):
         self.name = name
@@ -42,6 +42,10 @@ class Player:
         self.buy_brain = buy_brain
         if ( self.buy_brain is None ):
             self.buy_brain = buy_brains.buy_brain_dict['random']
+
+        self.action_brain = action_brain
+        if ( self.action_brain is None ):
+            self.action_brain = action_brains.action_brain_dict['random']
 
         for key in self.__dict__.keys():
             if ( 'default' in key ):
@@ -301,8 +305,7 @@ class Player:
                 ) for card in action_card_list])
             ))
 
-            # TODO: Implement brain and move...
-            selected_card = random.choice( action_card_list )
+            selected_card = self.action_brain.choose_action( action_card_list )
 
             if (selected_card is not None):
                 self.hand.stack.remove(selected_card)

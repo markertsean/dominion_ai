@@ -14,7 +14,7 @@ from games import game_engine
 from util import settings
 from util.logger import GameResultsLogger
 from util.logger import game_logger as gamelog
-from brains import buy_brains
+from brains import buy_brains, action_brains
 
 def init_players( inp_settings ):
     player_names = ['Alice','Bill','Cindy','Dan']
@@ -37,9 +37,29 @@ def init_players( inp_settings ):
                 n_lower = inp_settings[bb_str+"_n_lower"]
             buy_brain = brain(n_lower)
 
+        action_brain = action_brains.action_brain_dict['random']()
+        ab_str = p_str+"_action_brain"
+        if (
+            (ab_str in inp_settings.keys()) and
+            (inp_settings[ab_str] is not None ) and
+            (inp_settings[ab_str] != 'random' )
+        ):
+            if (inp_settings[ab_str] == 'attribute_prioritizer'):
+                abap_str = ab_str + '_attribute_prioritizer'
+                brain = action_brains.action_brain_dict[ inp_settings[ab_str] ]
+                order = []
+                if ( abap_str+"_order" in inp_settings.keys() ):
+                    order = inp_settings[abap_str+"_order"]
+                tiebreak_cost = False
+                if ( abap_str+"_tiebreak_cost" in inp_settings.keys() ):
+                    tiebreak_cost = inp_settings[abap_str+"_tiebreak_cost"]
+
+                action_brain = brain(order,tiebreak_cost)
+
         player_list.append( Player(
             player_names[i],
             buy_brain=buy_brain,
+            action_brain=action_brain,
             logger=gamelog
         ))
 

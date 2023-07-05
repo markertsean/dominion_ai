@@ -4,6 +4,7 @@ import sys
 sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
 
 from brains.buy_brains import buy_brain_dict
+from brains.action_brains import action_brain_dict
 
 def interpret( val ):
     assert isinstance(val,str)
@@ -71,6 +72,24 @@ def validate( inp ):
                 inp[key] = val
                 # TODO: check for file exist once implement files
 
+        key = "player_"+s+"_action_brain"
+        if ( key in inp ):
+            val = inp[key]
+            assert isinstance(val,str) or (val is None), key+' must be a string, recieved "'+str(inp[key])+'"'
+            if ( val is not None ):
+                line = val
+                l_items = line.split(' ')
+                name = l_items[0]
+
+                if (name=='attribute_prioritizer'):
+                    assert (len(l_items)==3),"attribute prioritizer must be of form:'attribute_prioritizer <card name,ability,buy,etc> <True/False>', recieved: {}".format(val)
+                    inp[key] = name
+                    inp[key+'_'+name+'_order'] = list(l_items[1].split(','))
+                    inp[key+'_'+name+'_tiebreak_cost'] = l_items[2]
+
+                assert ( name in action_brain_dict.keys() ),key+"must be one of: "+str(action_brain_dict.keys())+" recieved "+name
+                inp[key] = name
+
         key = key+"_output"
         if ( key in inp ):
             assert isinstance(inp[key],str) or (inp[key] is None), key+' must be a string, recieved "'+str(inp[key])+'"'
@@ -100,10 +119,10 @@ def read_settings( filename, print_result=False ):
     assert os.path.exists(filename), filename+" does not exist!"
     with open(filename) as f:
         for full_line in f:
-            line=full_line.strip()
-            if (len(line)>0):
+            line=full_line
+            if ( len(line.strip())>0 ):
                 assert '=' in line, '"'+line+'" does not contain an "=", settings must be of form "key=val"'
-                l = line.replace(' ','').split('=')
+                l = line.replace('\n','').split('=')
                 inp_settings[l[0]] = interpret(l[1])
 
     validate(inp_settings)
