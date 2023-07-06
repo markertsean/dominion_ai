@@ -21,10 +21,12 @@ class GenericCard:
     def additional_print():
         return ''
 
-    def __str__(self,tab_level=0):
+    def __str__(self,tab_level=0,keys=None):
         out_str = "{}Card '{}'".format('\t'*tab_level,self.name)
         tab_level_1 = tab_level+1
-        for key in sorted(self.__dict__.keys()):
+        if (keys is None):
+            keys = self.__dict__.keys()
+        for key in sorted(keys):
             if key != 'name':
                 out_str+='\n{}{:20s}\t{:20s}'.format('\t'*tab_level_1,str(key),str(self.__dict__[key]))
         return out_str
@@ -43,6 +45,9 @@ class DominionCard(GenericCard):
         ,coin=None
         ,victory_points=None
         ,text=None
+
+        # Attributes primarily used for ML training below
+        ,**kwargs
     ):
         assert isinstance(name,str)
         self.name    = name
@@ -54,9 +59,115 @@ class DominionCard(GenericCard):
         self.cost    = cost
         self.type    = card_type
         self.vp      = victory_points
+        self.text    = text
 
         if ( isinstance(self.type,str) ):
             self.type = [self.type]
+
+        self.card_attributes = [
+            'name','ability','action',
+            'buy','draw','coin','cost',
+            'type','vp','text'
+        ]
+
+        self.bool_flag_dict={
+            "cantrip"          : None # +1 card +1 action
+            ,"laboratory"      : None # +2 card +1 action
+            ,"villiage"        : None # +1 card +2 action
+
+            ,"attack_curse"    : False # Give opponent curse
+            ,"attack_discard"  : False # Force opponent discard
+            ,"attack_topdeck"  : False # Force something to top of deck
+            ,"attack_trash"    : False # Force someone to trash
+
+            ,"cycle_deck"      : False # Go through deck in order to find somthing
+            #,"cycle_discard"   : False
+            #,"cycle_trash"     : False
+            #,"cycle_treasure"  : False
+
+            ,"defensive"       : False
+
+            ,"discard"         : False
+            ,"discard_draw"    : False # Combined discard and draw mechanic
+
+            ,"draw_ability"    : False # Draw until certain number," or draw discard combos
+            ,"draw_treasure"   : False # Draw treasure
+
+            ,"gainer_general"  : False # Allows gain any card
+            ,"gainer_treasure" : False
+            #,"gainer_supply"   : False
+            #,"gainer_victory"  : False
+
+            ,"junk"            : False # Muck up deck," IE copper," curse," estate," ruins
+            ,"junk_synergy"    : False # Benefits from a full deck/slog game
+
+            ,"opponent_draws"  : False
+
+            ,"reaction"        : False
+
+            ,"repeat"          : False # Card ability causes repetition in another card
+
+            #,"search_deck"     : False # Search deck to find somthing
+            #,"search_discard"  : False
+            #,"search_trash"    : False
+
+            ,"shuffle"         : False # Reshuffle discard and draw new deck
+
+            ,"terminal"        : False # Action card that grants no additional action
+            ,"terminal_coin"   : False # Terminal," but grants treasure value
+            ,"terminal_draw"   : False # Terminal," but grants draw
+
+            #,"pseudo_trash"    : False # Allows set aside in pile
+            ,"trasher"         : False # Trashes general cards
+            ,"trash_coin"      : False # Trashed a coin
+            ,"trash_gain"      : False # Trashes to gain
+            ,"trash_self"      : False # Trashes this card
+
+            ,"upgrades"        : False # Upgrades an existing card
+
+            ,"discard_n"       : False
+            ,"draw_n"          : False
+            ,"trash_n"         : False
+        }
+
+        self.bool_flag_dict["cantrip"   ] = (self.action==1) and (self.draw==1)
+        self.bool_flag_dict["laboratory"] = (self.action==1) and (self.draw==2)
+        self.bool_flag_dict["villiage"  ] = (self.action==2) and (self.draw==1)
+
+        for arg in kwargs.keys():
+            assert arg in self.bool_flag_dict.keys(),\
+                "{} is not a valid Dominion Card Flag! Must be one of: [{}]".format(arg,
+                    ' '.join([key for key in self.bool_flag_dict.keys()])
+                )
+            self.bool_flag_dict[arg] = kwargs[arg]
+
+        self.flag_dict = self.__gen_numeric_flag_dict__()
+
+
+    def __repr__(self,printall=False,tab_level=0):
+        out_str = "{}Card '{}'".format('\t'*tab_level,self.name)
+        tab_level_1 = tab_level+1
+
+        keys = self.card_attributes
+        if (printall):
+            keys = self.__dict__.keys()
+
+        for key in sorted(keys):
+            if (key != 'name') and (key!='flag_dict') and (key!='bool_flag_dict'):
+                out_str+='\n{}{:20s}\t{:20s}'.format('\t'*tab_level_1,str(key),str(self.__dict__[key]))
+        return out_str
+
+    def __gen_numeric_flag_dict__(self):
+        numeric_flag_dict = {}
+        for key in self.bool_flag_dict.keys():
+            if ( self.bool_flag_dict[key] is None ):
+                numeric_flag_dict[key] = 0
+            elif ( isinstance(self.bool_flag_dict[key],bool) ):
+                numeric_flag_dict[key] = int(self.bool_flag_dict[key])
+            elif ( isinstance(self.bool_flag_dict[key],int) ):
+                numeric_flag_dict[key] = self.bool_flag_dict[key]
+
+        return numeric_flag_dict
 
 class CardPile:
     def __init__(self,name,stack=None):
