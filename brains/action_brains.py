@@ -28,8 +28,6 @@ class ActionAttributePrioritizer(ActionBrain):
         self.name="action_attribute_prioritizer"
         self.card_attributes = ['action','draw','buy','coin','ability']
         self.valid_cards = [card for card in dominion_cards.base_action_cards.keys()]
-        print(self.card_attributes)
-        print(self.valid_cards)
         self.order = order
         for item in self.order:
             assert item in self.card_attributes+self.valid_cards,\
