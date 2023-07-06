@@ -28,14 +28,19 @@ def init_players( inp_settings ):
         bb_str = p_str+"_buy_brain"
         if (
             (bb_str in inp_settings.keys()) and
-            (inp_settings[bb_str] is not None ) and
-            (inp_settings[bb_str] != 'random' )
+            (inp_settings[bb_str] is not None )
         ):
-            n_lower = 0
             brain = buy_brains.buy_brain_dict[ inp_settings[bb_str] ]
-            if ( bb_str+"_n_lower" in inp_settings.keys() ):
-                n_lower = inp_settings[bb_str+"_n_lower"]
-            buy_brain = brain(n_lower)
+            if ( inp_settings[bb_str] == 'big_money' ):
+                card_list=None
+                if ( bb_str+"_big_money_cards" in inp_settings ):
+                    card_list = inp_settings[bb_str+"_big_money_cards"]
+                buy_brain = brain( card_list )
+            else:
+                n_lower = 0
+                if ( bb_str+"_n_lower" in inp_settings.keys() ):
+                    n_lower = inp_settings[bb_str+"_n_lower"]
+                buy_brain = brain(n_lower)
 
         action_brain = action_brains.action_brain_dict['random']()
         ab_str = p_str+"_action_brain"
@@ -90,17 +95,12 @@ def main( config_fn ):
             gamelog.activate_print_log()
         else:
             gamelog.deactivate_print_log()
-    else:
-        for key in inp_settings:
-            print(key+"\t"+str(inp_settings[key]))
 
     for key in inp_settings.keys():
         gamelog.log("SETTING: {}={}".format(key,inp_settings[key]))
 
     # Set up players
     player_list = init_players( inp_settings )
-    for p in player_list:
-        print(p.buy_brain)
     old_player_order_list = [player_list[-1]] + player_list[:-1]
 
     win_list = []

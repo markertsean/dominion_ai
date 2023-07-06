@@ -64,7 +64,15 @@ def validate( inp ):
             assert isinstance(val,str) or (val is None), key+' must be a string, recieved "'+str(inp[key])+'"'
             if ( val is not None ):
                 val_num=None
-                if ( (val[-1].isnumeric()) ):
+
+                if ( val.startswith( 'big_money' ) ):
+                    l_items=val.split(' ')
+                    val = l_items[0]
+                    print(l_items)
+                    if ( len(l_items)>1 ):
+                        card_list = list(l_items[1].split(','))
+                        inp[key+'_big_money_cards'] = card_list
+                elif ( (val[-1].isnumeric()) ):
                     val_num = val[-1]
                     val = val[:-1].strip()
                     inp[key+"_n_lower"] = int(val_num)

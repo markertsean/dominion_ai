@@ -71,8 +71,67 @@ class BuyProvinceTopRandom(BuyTopRandom):
                 return card
         return self.pick_random_top( kingdom_card_counts )
 
+class BuyBigMoney(BuyBrain):
+    def __init__(self,cards=None):
+        self.name = 'big_money'
+        self.cards = None
+        if ( cards is not None ):
+            if ( isinstance(cards,str) ):
+                cards=[cards]
+            assert isinstance(cards,list),\
+            "Input cards must be string or list of strings, recieved {}".format(type(cards))
+            self.cards = cards
+            for card in cards:
+                self.name += '-'+card
+
+    def choose_buy(self,buy_inputs):
+        kingdom_card_counts = buy_inputs['kingdom_counts']
+
+        cards = [card for card, count in kingdom_card_counts if card is not None]
+        card_names = [card.name for card in cards]
+
+        # Default big money
+        ind = None
+        bm_card = None
+        if ( "province" in card_names ):
+            ind = card_names.index("province")
+            bm_card = cards[ind]
+        elif ( "gold" in card_names ):
+            ind = card_names.index("gold")
+            bm_card = cards[ind]
+        elif ( "silver" in card_names ):
+            ind = card_names.index("silver")
+            bm_card = cards[ind]
+
+        # Big money with cards, see if worth buying
+        #TODO: replace the randoms with early/late game checks, indclude duchy
+        if ( self.cards is not None ):
+            best_card = None
+            for card_name in self.cards:
+                if ( card_name in card_names ):
+                    card = cards[ card_names.index(card_name) ]
+                    if (
+                        (best_card is None) or
+                        (best_card.cost < card.cost ) or
+                        ((best_card.cost==card.cost) and (random.random()>0.5))
+                    ):
+                        best_card = card
+            if ( (bm_card is None) and (best_card is not None) ):
+                bm_card = best_card
+            elif (
+                (bm_card is not None) and
+                (best_card is not None) and
+                (
+                    (bm_card.cost < best_card.cost) or
+                    ((bm_card.cost == best_card.cost) and (random.random()>0.5))
+                )
+            ):
+                bm_card = best_card
+        return bm_card
+
 buy_brain_dict = {
     'random':BuyRandom,
     'top_random':BuyTopRandom,
     'province_top_random':BuyProvinceTopRandom,
+    'big_money':BuyBigMoney,
 }
