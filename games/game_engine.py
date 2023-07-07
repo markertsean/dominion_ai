@@ -116,6 +116,9 @@ class DominionGame:
     def calc_vp(self,player_list):
         cards_with_vp_ability = ['gardens']
 
+        if ( not isinstance(player_list,list) ):
+            player_list = [player_list]
+
         vp_dict = {}
         for player in player_list:
             inp_params = {
@@ -159,16 +162,26 @@ class DominionGame:
 
         default_handsize = 5
 
+        turn_dict = {}
         victory = False
         turn = 1
         while not victory:
+
             self.log("DG GAME: {}".format(30*'-'))
             self.log("DG GAME: turn '{}'".format(str(turn)))
+
+            turn_dict[turn] = {}
+
             for player in player_list:
+
                 self.log("DG GAME: {}".format('-'))
                 self.log("DG GAME: player turn - '"+str(player.name)+"'")
+
                 # Draw new hand, set things like turn_actions, buy, etc
                 player.start_turn()
+                starting_hand    = player.hand.count_cards()
+                starting_discard = player.discard_pile.count_cards()
+                starting_draw    = player.draw_pile.count_cards()
 
                 # Action
                 player.do_actions(
@@ -178,13 +191,25 @@ class DominionGame:
                 )
 
                 # Spend treasure
-                player.spend_treasure()
+                treasure = player.spend_treasure()
 
                 # Buy
-                player.do_buy(self.kingdom)
+                buy_card_list = player.do_buy(self.kingdom)
+                buy_name_list = [ card.name for card in buy_card_list if card is not None ]
 
                 # Cleanup
                 player.cleanup()
+
+                player_vp = self.calc_vp(player)[player.name]
+
+                turn_dict[turn][player.name] = {
+                    "hand_start":starting_hand,
+                    "discard_start":starting_discard,
+                    "draw_start":starting_draw,
+                    "treasure_spent":treasure,
+                    "cards_purchased":buy_name_list,
+                    "victory_points_end":player_vp,
+                }
 
                 # Victory conditions
                 if ( self.victory_condition_met() ):
@@ -201,4 +226,4 @@ class DominionGame:
             card_dict[player.name] = player.get_all_card_count()
             player.wipe_all_stacks()
 
-        return point_dict, card_dict
+        return point_dict, card_dict, turn_dict

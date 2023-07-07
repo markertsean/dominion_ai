@@ -138,15 +138,17 @@ def main( config_fn ):
 
         current_game_kingdom_card_names = [ key for key in this_game.kingdom.keys() ]
 
-        player_points, player_cards = this_game.run_game( player_order_list )
+        player_points, player_cards, turn_dict = this_game.run_game( player_order_list )
 
         meta_game_dict = {
             "input_settings":inp_settings,
             "kingdom_cards":current_game_kingdom_card_names,
+            "turn_order":[player.name for player in player_order_list],
             "final_vp":player_points,
             "final_cards":player_cards,
             "program_start_time":gamelog.time_str,
             "game_number":game_num,
+            "turns":turn_dict,
         }
 
         for name in player_points.keys():

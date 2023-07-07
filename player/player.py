@@ -333,6 +333,7 @@ class Player:
 
     def do_buy(self,input_kingdom):
         self.log("has '{}' buy".format(self.turn_buy))
+        buy_list = []
         for buy_i in range(0,self.turn_buy):
 
             self.log("has '{}' coin".format(self.turn_coin),debug=True)
@@ -349,6 +350,7 @@ class Player:
                 'kingdom_counts':card_count_list
             }
             buy_card = self.buy_brain.choose_buy( brain_inputs )
+            buy_list.append( buy_card )
 
             self.log("purchases '{}' for '{}'".format(
                 buy_card.name if isinstance(buy_card,cards.DominionCard) else None,
@@ -358,6 +360,8 @@ class Player:
                 self.turn_coin -= buy_card.cost
 
                 self.discard_pile.draw_from_supply( input_kingdom[buy_card.name] )
+
+        return buy_list
 
     def cleanup(self):
         n_hand = self.hand.n_cards()
