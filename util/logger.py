@@ -14,16 +14,17 @@ class GameLogger:
         self.active = False
         self.print_log = False
         self.debug = False
+        self.time_str = None
 
     def __del__(self):
         self.close_log()
 
     def __get_full_log_file_name__(self):
-        time_str = time.strftime('%Y%m%d_%H%M%S')
+        self.time_str = time.strftime('%Y%m%d_%H%M%S')
         path = project_path
         log_path = path+'data/logs/'
         os.makedirs(log_path,exist_ok=True)
-        return log_path+'game_log_'+time_str+'.log'
+        return log_path+'game_log_'+self.time_str+'.log'
 
     def __repr__(self):
         out_str = "Logger status:\n"

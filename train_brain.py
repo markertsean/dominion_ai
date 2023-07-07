@@ -15,6 +15,7 @@ from util import settings
 from util.logger import GameResultsLogger
 from util.logger import game_logger as gamelog
 from brains import buy_brains, action_brains
+import util.input_output as io
 
 def init_players( inp_settings ):
     player_names = ['Alice','Bill','Cindy','Dan']
@@ -118,7 +119,7 @@ def main( config_fn ):
         ):
             gamelog.activate()
 
-        gamelog.log("TABLE: game {} {}".format(game_num,50*'='))
+        gamelog.log("TABLE: game {} {}".format(game_num+1,50*'='))
 
         # Rotate first player
         player_order_list = old_player_order_list[1:] + [old_player_order_list[0]]
@@ -135,7 +136,19 @@ def main( config_fn ):
             logger=gamelog,
         )
 
+        current_game_kingdom_card_names = [ key for key in this_game.kingdom.keys() ]
+
         player_points, player_cards = this_game.run_game( player_order_list )
+
+        meta_game_dict = {
+            "input_settings":inp_settings,
+            "kingdom_cards":current_game_kingdom_card_names,
+            "final_vp":player_points,
+            "final_cards":player_cards,
+            "program_start_time":gamelog.time_str,
+            "game_number":game_num,
+        }
+
         for name in player_points.keys():
             card_count = player_cards[name]
             player_str ="player='{}' victory_points={} cards={{{}}}".format(
@@ -146,7 +159,8 @@ def main( config_fn ):
             gamelog.log("TABLE: "+player_str)
             results_logger.log("game='{}' ".format(game_num)+player_str)
 
-            print("game '{}' ".format(game_num)+player_str)
+        if ( gamelog.active ):
+            io.write_game( meta_game_dict )
 
     gamelog.close_log()
 
