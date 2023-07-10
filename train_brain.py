@@ -32,7 +32,9 @@ def init_players( inp_settings ):
             (inp_settings[bb_str] is not None )
         ):
             brain = buy_brains.buy_brain_dict[ inp_settings[bb_str] ]
-            if ( inp_settings[bb_str] == 'big_money' ):
+            if ( (inp_settings[bb_str] == 'random') or (inp_settings[bb_str] == 'top_random') ):
+                pass
+            elif ( inp_settings[bb_str] == 'big_money' ):
                 card_list=None
                 if ( bb_str+"_big_money_cards" in inp_settings ):
                     card_list = inp_settings[bb_str+"_big_money_cards"]

@@ -474,6 +474,12 @@ estate_supply   = CardSupply(estate  ,24)
 duchy_supply    = CardSupply(duchy   ,12)
 province_supply = CardSupply(province,12)
 
+victory_card_reference = {
+    'curse':curse,
+    'estate':estate,
+    'duchy':duchy,
+    'province':province,
+}
 
 premade_kingdom_dict = {
     # Base game
@@ -503,3 +509,14 @@ premade_kingdom_dict = {
         'village','woodcutter'
     ],
 }
+
+
+all_valid_cards = {}
+for card_set in [
+    treasure_reference,
+    victory_card_reference,
+    base_action_cards,
+
+]:
+    for card_name, card in card_set.items():
+        all_valid_cards[card_name] = card
