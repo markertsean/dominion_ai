@@ -184,7 +184,8 @@ class DominionGame:
                 starting_draw    = player.draw_pile.count_cards()
 
                 # Action
-                player.do_actions(
+                # TODO: Implement information on card action - IE gained, discarded, trashed...etc
+                actions = player.do_actions(
                     opponent_gen(player,player_list),
                     self.kingdom,
                     self.trash
@@ -209,6 +210,7 @@ class DominionGame:
                     "treasure_spent":treasure,
                     "cards_purchased":buy_name_list,
                     "victory_points_end":player_vp,
+                    "actions":actions,
                 }
 
                 # Victory conditions

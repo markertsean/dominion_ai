@@ -259,6 +259,8 @@ class Player:
 
     def play_card(self,card,inp_dict):
 
+        drew_cards = False
+
         for c, p in zip(
             [card.action,card.buy,card.coin,card.draw],
             [self.turn_action,self.turn_buy,self.turn_coin,self.turn_draw]
@@ -270,9 +272,13 @@ class Player:
             (isinstance(card.draw,int))
         ):
             self.draw_to_hand(card.draw)
-        # TODO: implement all the abilities, and draw properly
+            drew_cards |= True
+
         if ( card.ability is not None ):
+            # TODO: check if ability drew cards, return any cards played/gained in
             card.ability( inp_dict )
+
+        return drew_cards
 
     def do_actions(self,opponents,kingdom,trash):
         inp_params = {
@@ -282,6 +288,7 @@ class Player:
             'trash':trash,
         }
         new_card = True
+        acted_list = []
         action_card_list = [None]
         while self.turn_action > 0:
             self.log("action phase with '{}' actions, '{}' buy, '{}' coin, '{}' cards".format(
@@ -306,6 +313,7 @@ class Player:
             ))
 
             selected_card = self.action_brain.choose_action( action_card_list )
+            acted_list.append( ("played",selected_card.name if selected_card is not None else None ) )
 
             if (selected_card is not None):
                 self.hand.stack.remove(selected_card)
@@ -318,6 +326,7 @@ class Player:
                 self.log('plays nothing')
 
             self.turn_action -= 1
+        return acted_list
 
     def spend_treasure(self):
         coin = 0
