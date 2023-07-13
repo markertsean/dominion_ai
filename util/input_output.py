@@ -10,6 +10,9 @@ def get_data_path():
 def get_game_turn_path():
     return get_data_path() + "games/"
 
+def get_latest_dated_file(file_path):
+    return max(os.listdir(file_path))
+
 def write_game( game_dict ):
     out_path = get_game_turn_path() + game_dict['program_start_time'] + "/"
     os.makedirs(out_path,exist_ok=True)
