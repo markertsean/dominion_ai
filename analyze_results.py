@@ -42,6 +42,29 @@ def main( file_date ):
         True
     )
 
+    game_analysis_df, turn_analysis_df = ap.gen_analysis_dfs(
+        simulation_settings,
+        game_metadata,
+        turn_df,
+        True
+    )
+
+    ap.gen_turn_analysis_plots(
+        simulation_settings,
+        game_metadata,
+        turn_df,
+        turn_analysis_df,
+        True
+    )
+
+    ap.gen_game_analysis_plots(
+        simulation_settings,
+        game_metadata,
+        turn_df,
+        game_analysis_df,
+        True
+    )
+
 if ( __name__=='__main__' ):
     file_date = ap.get_latest_game_file()
     if ( len(sys.argv) > 1 ):

@@ -70,6 +70,7 @@ class DominionCard(GenericCard):
             'type','vp','text'
         ]
 
+        # Add any new flags to grouping
         self.bool_flag_dict={
             "cantrip"          : None # +1 card +1 action
             ,"laboratory"      : None # +2 card +1 action
@@ -168,6 +169,69 @@ class DominionCard(GenericCard):
                 numeric_flag_dict[key] = self.bool_flag_dict[key]
 
         return numeric_flag_dict
+
+dominion_card_flag_groupings = {
+    "action": [
+        "reaction",
+        "repeat",
+    ],
+    "attack": [
+        "attack_curse",
+        "attack_discard",
+        "attack_topdeck",
+        "attack_trash",
+    ],
+    "defensive": [
+        "defensive",
+    ],
+    "discard": [
+        "discard",
+        "discard_draw",
+    ],
+    "draw": [
+        "cycle_deck",
+        "discard_draw",
+        "draw_ability",
+        "draw_treasure",
+        "terminal_draw",
+    ],
+    "coin": [
+        "terminal_coin",
+    ],
+    "gain": [
+        "gainer_general",
+        "gainer_treasure",
+    ],
+    "opponent_benefit": [
+        "opponent_draws",
+    ],
+    "junk": [
+        "junk",
+    ],
+    "junk_synergy": [
+        "junk_synergy",
+    ],
+    "shuffle": [
+        "shuffle",
+    ],
+    "trash": [
+        "trasher",
+        "trash_coin",
+        "trash_gain",
+        "trash_self",
+    ],
+    "upgrade": [
+        "upgrades",
+    ],
+}
+
+reverse_dominion_card_flag_groupings = {}
+for attribute, val_list in dominion_card_flag_groupings.items():
+    for val in val_list:
+        if (val in reverse_dominion_card_flag_groupings):
+            reverse_dominion_card_flag_groupings[val].append(attribute)
+        else:
+            reverse_dominion_card_flag_groupings[val] = [attribute]
 
 class CardPile:
     def __init__(self,name,stack=None):

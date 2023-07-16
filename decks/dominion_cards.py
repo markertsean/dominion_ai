@@ -155,7 +155,7 @@ base_action_cards = {
     ),
 
     'council_room': DominionCard(
-        name='council room',
+        name='council_room',
         cost=5,
         card_type='action',
         text=\
@@ -389,7 +389,7 @@ base_action_cards = {
     ),
 
     'throne_room': DominionCard(
-        name='throne room',
+        name='throne_room',
         cost=4,
         card_type='action',
         text=\
