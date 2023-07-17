@@ -6,14 +6,6 @@ sys.path.append('/'.join( __file__.split('/')[:-2] )+'/')
 from decks import cards,dominion_cards
 from util.logger import GameLogger
 
-def validate_all_action_cards():
-    kingdom_dict = dominion_cards.premade_kingdom_dict
-    action_cards = dominion_cards.base_action_cards
-    for key in kingdom_dict:
-        kingdom = kingdom_dict[key]
-        for card in kingdom:
-            assert card in action_cards, key+'\'s '+card+' card is not recognized'
-
 def opponent_gen(player,player_list):
     return [opp for opp in player_list if opp != player]
 

@@ -520,3 +520,10 @@ for card_set in [
 ]:
     for card_name, card in card_set.items():
         all_valid_cards[card_name] = card
+
+def validate_all_action_cards():
+    kingdom_dict = dominion_cards.premade_kingdom_dict
+    for key in kingdom_dict:
+        kingdom = kingdom_dict[key]
+        for card in kingdom:
+            assert card in all_valid_cards, key+'\'s '+card+' card is not recognized'
