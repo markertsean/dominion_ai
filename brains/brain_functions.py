@@ -75,3 +75,22 @@ def analyze_deck( inp_card_dict, normalize=True ):
             if ( key != "n_cards" ):
                 result_dict[key] = result_dict[key] / result_dict["n_cards"]
     return result_dict
+
+
+# Returns 0/early, 1/mid, 2/late
+def game_phase( turn, kingdom, low_pile_n=4, low_province_n=7 ):
+    assert isinstance(kingdom,dict)
+    assert isinstance(kingdom[list(kingdom.keys())[0]],decks.cards.CardSupply),"input kingdom must be a dict of card supplies!"
+    if ( turn <= 4 ):
+        return 0
+    else:
+        # Late game if low on victory cards, or 3 supplies nearly run out
+        if ( kingdom['province'].count() <= low_province_n ):
+            return 2
+        n_low = 0
+        for name,supply in kingdom.items():
+            if ( supply.count() <= low_pile_n ):
+                n_low += 1
+                if ( n_low >= 3 ):
+                    return 2
+    return 1
