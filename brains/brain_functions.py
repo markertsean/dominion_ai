@@ -73,7 +73,9 @@ def analyze_deck( inp_card_dict, normalize=True ):
     if ( normalize ):
         for key in result_dict:
             if ( key != "n_cards" ):
-                result_dict[key] = result_dict[key] / result_dict["n_cards"]
+                result_dict[key] = result_dict[key] / ( result_dict["n_cards"] + 1e-7 )
+            else:
+                result_dict[key] = result_dict[key] / 10.
     return result_dict
 
 
