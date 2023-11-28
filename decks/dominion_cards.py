@@ -200,7 +200,7 @@ base_action_cards = {
     'gardens': DominionCard(
         name='gardens',
         cost=4,
-        card_type='victory',
+        card_type=['victory','action'],
         text=\
         '''
         Worth 1 vp for every 10 cards in your deck (rounded down)
@@ -479,6 +479,23 @@ victory_card_reference = {
     'estate':estate,
     'duchy':duchy,
     'province':province,
+}
+
+game_expansion_reference = {
+    'base': {
+        'kingdom': base_action_cards,
+        'treasure': {
+            'copper': copper,
+            'silver': silver,
+            'gold'  : gold,
+        },
+        'victory': {
+            'curse':curse,
+            'estate':estate,
+            'duchy':duchy,
+            'province':province,
+        }
+    },
 }
 
 premade_kingdom_dict = {
