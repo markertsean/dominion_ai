@@ -4,10 +4,11 @@ import copy
 
 import PySimpleGUI as sg
 
-project_path = '/'.join(__file__.split('/')[:-1])+'/'
+project_path = os.getcwd()+'/'
 sys.path.append(project_path)
 
 from decks import cards,dominion_cards
+
 
 game_ref = dominion_cards.game_expansion_reference
 default_game_name = 'base'
@@ -26,7 +27,7 @@ default_kingdom_selector_layout_start = [
 
 default_kingdom_selector_layout_end = [
     [sg.HSeparator(pad=(kingdom_select_pad_hspace,kingdom_select_pad_vspace))],
-    [sg.Button("Accept",key='Kingdom_Accept')]
+    [sg.Button("Accept",key='Kingdom_Accept'),sg.Button("Reset",key='Kingdom_Reset')]
 ]
 
 default_window_title = "Dominion Hand Analyzer"
@@ -37,6 +38,7 @@ def get_button_color( status ):
     if (status):
         return 'green'
     return 'red'
+
 
 def gen_selectable_card_buttons_from_kingdom( inp_game_card_list, kingdom_card_status_dict ):
     out_button_list = []
@@ -50,6 +52,7 @@ def gen_selectable_card_buttons_from_kingdom( inp_game_card_list, kingdom_card_s
         )
     return out_button_list
 
+
 def gen_formatted_button_list( button_list, width=5 ):
     formatted_list = [[]]
     i = width
@@ -60,7 +63,8 @@ def gen_formatted_button_list( button_list, width=5 ):
         i+=1
     return formatted_list
 
-def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict ):
+
+def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict, all_card_kind_dict ):
     game_buttons = gen_selectable_card_buttons_from_kingdom(
         inp_game_card_list,
         kingdom_card_status_dict
@@ -74,42 +78,27 @@ def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict ):
         game_button_list_formatted
     )
     
-    victory_button_list = []
-    treasure_button_list = []
-    kingdom_button_list = []
-    for card_name in kingdom_card_status_dict:
-        if ( kingdom_card_status_dict[card_name] ):
-            card_type = dominion_cards.all_valid_cards[card_name].type
+    kingdom_kind_dict = {}
+    kingdom_kind_formatted_dict = {}
+    for kind in all_card_kind_dict:
+        kingdom_kind_dict[kind] = []
+        for card_name in all_card_kind_dict[kind]:
             button = sg.Button(
                 card_name,
                 button_color=get_button_color( kingdom_card_status_dict[card_name] ),
+                visible=kingdom_card_status_dict[card_name],
                 key="kingdom_"+card_name,
             )
-            
-            if (
-                ( isinstance(card_type,str ) and ('treasure' == card_type) ) or
-                ( isinstance(card_type,list) and ('treasure' in card_type) )
-            ):
-                treasure_button_list.append( button )
-            elif (
-                ( isinstance(card_type,str ) and ( ('victory' == card_type) or ('curse' == card_type) ) ) or
-                ( isinstance(card_type,list) and ( ('victory' in card_type) or ('curse' in card_type) ) )
-            ):
-                victory_button_list.append( button )
-            else:
-                kingdom_button_list.append( button )
-
-    victory_button_list_formatted  = gen_formatted_button_list(  victory_button_list )
-    treasure_button_list_formatted = gen_formatted_button_list( treasure_button_list )
-    kingdom_button_list_formatted  = gen_formatted_button_list(  kingdom_button_list )
+            kingdom_kind_dict[kind].append( button )
+        kingdom_kind_formatted_dict[kind] = gen_formatted_button_list( kingdom_kind_dict[kind] )
 
     game_column_selected_kingdom_cards = sg.Column(
         [[sg.Text("Victory Cards:")]] +
-        victory_button_list_formatted +
+        kingdom_kind_formatted_dict['victory'] +
         [[sg.Text("Treasure Cards:")]] +
-        treasure_button_list_formatted +
+        kingdom_kind_formatted_dict['treasure'] +
         [[sg.Text("Kingdom Cards:")]] +
-        kingdom_button_list_formatted
+        kingdom_kind_formatted_dict['kingdom']
     )
 
     return default_kingdom_selector_layout_start +         [
@@ -117,16 +106,16 @@ def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict ):
                 game_column_selectable_kingdom_cards,
                 sg.VSeparator(),
                 game_column_selected_kingdom_cards,
-                #sg.Column(default_selected_kingdom_card_layout),
             ]
         ] + \
         default_kingdom_selector_layout_end
 
 
-def gen_window( title, margins, game_card_list, kingdom_card_activation_dict ):
+def gen_window( title, margins, game_card_list, kingdom_card_activation_dict, all_card_kind_dict ):
     gen_layout = gen_kingdom_display_layout(
         game_card_list,
-        kingdom_card_activation_dict
+        kingdom_card_activation_dict,
+        all_card_kind_dict,
     )
     gen_layout_copy = copy.deepcopy( gen_layout )
     return sg.Window(
@@ -135,7 +124,6 @@ def gen_window( title, margins, game_card_list, kingdom_card_activation_dict ):
         margins=margins,
         element_justification='c'
     )
-    #return window
 
 
 def main( inp_path = None ):
@@ -145,12 +133,17 @@ def main( inp_path = None ):
 
     # Create bool list of cards by game name
     kingdom_card_activation_dict = {} # Key is card name, val is whether toggled
-    game_card_dict = {} # Key is game/expansion name, value is list of all cards originating from it
+    game_card_dict = {} # Key is game/expansion name, value is list of all cards originating from it    
+    all_cards_by_kind = {} # For the layout on the right side of the kindom building panel
+    
     for game_name in game_ref.keys():
         game_card_dict[game_name] = []
         for kind in ['victory','treasure','kingdom']:
             if ( kind in game_ref[game_name] ):
+                if ( kind not in all_cards_by_kind ):
+                    all_cards_by_kind[kind] = []
                 for card in game_ref[game_name][kind]:
+                    all_cards_by_kind[kind].append(card)
                     if (
                         (card in treasure_card_list) or
                         (card in victory_card_list)
@@ -170,7 +163,8 @@ def main( inp_path = None ):
         default_window_title,
         default_window_margins,
         game_card_dict[this_game_name],
-        kingdom_card_activation_dict
+        kingdom_card_activation_dict,
+        all_cards_by_kind
     )
     
     while True:
@@ -180,47 +174,30 @@ def main( inp_path = None ):
         if ( event == sg.WIN_CLOSED ):
             break
 
+        elif ( event == "Kingdom_Reset" ):
+            continue
+            
         # Update cards that are selected from a game
         for card_name in game_card_dict[this_game_name]:
-            if event == "supply_"+card_name:
+            if ( event in ("supply_"+card_name,"kingdom_"+card_name) ):
                 kingdom_card_activation_dict[card_name] = not kingdom_card_activation_dict[card_name]
                 window["supply_"+card_name].update(
                     button_color = get_button_color( kingdom_card_activation_dict[card_name] )
                 )
-
-                new_window = gen_window(
-                    default_window_title,
-                    default_window_margins,
-                    game_card_dict[this_game_name],
-                    kingdom_card_activation_dict
+                window["kingdom_"+card_name].update(
+                    button_color = get_button_color( kingdom_card_activation_dict[card_name] ),
+                    visible = kingdom_card_activation_dict[card_name]
                 )
-                window.close()
-                window=new_window
-                
-                break
-            elif event == "kingdom_"+card_name:
-                kingdom_card_activation_dict[card_name] = not kingdom_card_activation_dict[card_name]
-                window["supply_"+card_name].update(
-                    button_color = get_button_color( kingdom_card_activation_dict[card_name] )
-                )
-
-                new_window = gen_window(
-                    default_window_title,
-                    default_window_margins,
-                    game_card_dict[this_game_name],
-                    kingdom_card_activation_dict
-                )
-                window.close()
-                window=new_window
 
                 break
-            
+
         if ( reset ):
             treasure_card_list = default_treasure_card_list
             victory_card_list = default_victory_card_list
             reset = False
-                    
+                               
     window.close()
+
 
 if ( __name__=='__main__' ):
     main(project_path)
