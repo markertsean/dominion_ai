@@ -10,6 +10,7 @@ sys.path.append(project_path)
 from decks import cards,dominion_cards
 
 
+
 game_ref = dominion_cards.game_expansion_reference
 default_game_name = 'base'
 default_game = game_ref[default_game_name]
@@ -69,15 +70,15 @@ def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict, al
         inp_game_card_list,
         kingdom_card_status_dict
     )
-    
+
     # Format the column as scrolling is not an option
     game_button_list_formatted = gen_formatted_button_list( game_buttons )
-    
+
     game_column_selectable_kingdom_cards = sg.Column(
         [[sg.Text("Possible Cards:")]] +
         game_button_list_formatted
     )
-    
+
     kingdom_kind_dict = {}
     kingdom_kind_formatted_dict = {}
     for kind in all_card_kind_dict:
@@ -111,6 +112,32 @@ def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict, al
         default_kingdom_selector_layout_end
 
 
+def gen_default_card_dicts():
+    # Create bool list of cards by game name
+    kingdom_card_activation_dict = {} # Key is card name, val is whether toggled
+    game_card_dict = {} # Key is game/expansion name, value is list of all cards originating from it
+    all_cards_by_kind = {} # For the layout on the right side of the kindom building panel
+
+    for game_name in game_ref.keys():
+        game_card_dict[game_name] = []
+        for kind in ['victory','treasure','kingdom']:
+            if ( kind in game_ref[game_name] ):
+                if ( kind not in all_cards_by_kind ):
+                    all_cards_by_kind[kind] = []
+                for card in game_ref[game_name][kind]:
+                    all_cards_by_kind[kind].append(card)
+                    if (
+                        (card in default_treasure_card_list) or
+                        (card in default_victory_card_list)
+                    ):
+                        kingdom_card_activation_dict[card] = True
+                    else:
+                        kingdom_card_activation_dict[card] = False
+
+                    game_card_dict[game_name].append( card )
+    return kingdom_card_activation_dict, game_card_dict, all_cards_by_kind
+
+
 def gen_window( title, margins, game_card_list, kingdom_card_activation_dict, all_card_kind_dict ):
     gen_layout = gen_kingdom_display_layout(
         game_card_list,
@@ -127,38 +154,11 @@ def gen_window( title, margins, game_card_list, kingdom_card_activation_dict, al
 
 
 def main( inp_path = None ):
-        
-    treasure_card_list = default_treasure_card_list
-    victory_card_list = default_victory_card_list
 
-    # Create bool list of cards by game name
-    kingdom_card_activation_dict = {} # Key is card name, val is whether toggled
-    game_card_dict = {} # Key is game/expansion name, value is list of all cards originating from it    
-    all_cards_by_kind = {} # For the layout on the right side of the kindom building panel
-    
-    for game_name in game_ref.keys():
-        game_card_dict[game_name] = []
-        for kind in ['victory','treasure','kingdom']:
-            if ( kind in game_ref[game_name] ):
-                if ( kind not in all_cards_by_kind ):
-                    all_cards_by_kind[kind] = []
-                for card in game_ref[game_name][kind]:
-                    all_cards_by_kind[kind].append(card)
-                    if (
-                        (card in treasure_card_list) or
-                        (card in victory_card_list)
-                    ):
-                        kingdom_card_activation_dict[card] = True
-                    else:
-                        kingdom_card_activation_dict[card] = False
-                        
-                    game_card_dict[game_name].append( card )
-    
-    
-    reset = False
-    
+    kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
+
     this_game_name = default_game_name
-    
+
     window = gen_window(
         default_window_title,
         default_window_margins,
@@ -166,17 +166,26 @@ def main( inp_path = None ):
         kingdom_card_activation_dict,
         all_cards_by_kind
     )
-    
+
     while True:
-        
+
         event, values = window.read()
         print(event,values)
         if ( event == sg.WIN_CLOSED ):
             break
 
         elif ( event == "Kingdom_Reset" ):
+            kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
+            window.close()
+            window = gen_window(
+                default_window_title,
+                default_window_margins,
+                game_card_dict[this_game_name],
+                kingdom_card_activation_dict,
+                all_cards_by_kind
+            )
             continue
-            
+
         # Update cards that are selected from a game
         for card_name in game_card_dict[this_game_name]:
             if ( event in ("supply_"+card_name,"kingdom_"+card_name) ):
@@ -191,11 +200,6 @@ def main( inp_path = None ):
 
                 break
 
-        if ( reset ):
-            treasure_card_list = default_treasure_card_list
-            victory_card_list = default_victory_card_list
-            reset = False
-                               
     window.close()
 
 
