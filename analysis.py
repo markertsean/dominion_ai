@@ -160,6 +160,7 @@ def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, car
     assert (len(name_color_label_tuple_list) == 3)
     assert ( count != (cards_to_count is None) ), "If counting must provide list of card piles to count"
     card_count = {}
+    full_deck = {}
     if ( cards_to_count is not None ):
         pile_count_list = [ pile.count_cards() for pile in cards_to_count ]
         full_deck = bf.combine_deck_count( pile_count_list )
@@ -167,17 +168,33 @@ def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, car
     out_layout = []
     for card in kingdom_cards:
         button_list = []
+        visible_row = (
+            (cards_to_count is None ) or
+            ( True if card in full_deck else False )
+        )
         for name_t, color_t, label_t in name_color_label_tuple_list:
             button_list.append(
-                sg.Button( label_t, button_color=color_t, key="move_{}_{}_{}".format(name,name_t,card))
+                sg.Button(
+                    label_t,
+                    button_color=color_t,
+                    key="move_{}_{}_{}".format(name,name_t,card),
+                    visible=visible_row,
+                )
             )
-        out_layout.append([sg.Text(card, key="{}_card_name".format(name))])
+        out_layout.append([
+            sg.Text(
+                card,
+                key="{}_{}_name".format(name,card),
+                visible=visible_row,
+            )
+        ])
         if count:
             out_layout[-1] += sg.Text(
                 "{:2d}".format(
                     0 if card not in full_deck else int(full_deck[card])
                 ),
-                key="{}_{}_count".format(name,card)
+                key="{}_{}_count".format(name,card),
+                visible=visible_row,
             ),
         out_layout[-1] += button_list
     return out_layout
@@ -205,7 +222,8 @@ def gen_stat_string_dict( stat_dict ):
     out_dict = {}
 
     for key, val in stat_dict.items():
-        out_dict[key] = (name_format_str+"{:0.3f}").format(key,val) if isinstance(val,float)             else (name_format_str+"{:5d}").format(key,val)
+        out_dict[key] = (name_format_str+"{:0.3f}").format(key,val) if isinstance(val,float) \
+            else (name_format_str+"{:5d}").format(key,val)
 
     return out_dict
 
@@ -248,7 +266,7 @@ def gen_deck_stats_formatted( name, pile_list ):
     return [[gen_deck_stats_layout(name,pile_list)]]
 
 
-def update_deck_stats( name, pile_list, window ):
+def update_deck_stats( name, pile_list, kingdom_cards, window ):
     analysis_deck = gen_deck_stats( pile_list )
     stat_strings = gen_stat_string_dict( analysis_deck )
 
@@ -259,12 +277,29 @@ def update_deck_stats( name, pile_list, window ):
         window["status_{}_{}".format(name,key)].update( val )
 
     if ( name != 'deck' ):
-        for card, count in full_deck.items():
+        #for card, count in full_deck.items():
+        for card in kingdom_cards:
             window["{}_{}_count".format(name,card)].update(
                 "{:2d}".format(
                     0 if card not in full_deck else int(full_deck[card])
                 )
             )
+
+            visible_row = False if (card not in full_deck) or (full_deck[card]<1) else True
+
+            window["{}_{}_name".format(name,card)].update(
+                visible = visible_row
+            )
+            window["{}_{}_count".format(name,card)].update(
+                visible = visible_row
+            )
+
+            for other_name in ['kingdom','draw','hand','discard']:
+                if ( name != other_name ):
+                    window["move_{}_{}_{}".format(name,other_name,card)].update(
+                        visible = visible_row
+                    )
+
 
 
 def run_game_analysis_window( kind_card_list_dict ):
@@ -433,6 +468,8 @@ def run_game_analysis_window( kind_card_list_dict ):
                 if ( card_name in count_dict ):
                     n_cards = count_dict[card_name]
 
+            print(card_name,n_cards)
+
             if ( n_cards > 0 ):
                 # Move card around
                 if ( isinstance(origin,cards.CardPile) ):
@@ -444,7 +481,7 @@ def run_game_analysis_window( kind_card_list_dict ):
                 # Update stats
                 for update_name in [origin_pile,destination_pile]:
                     pile_to_update, piles = update_dict[update_name]
-                    update_deck_stats( pile_to_update, piles, window )
+                    update_deck_stats( pile_to_update, piles, kingdom_cards, window )
 
     window.close()
 
