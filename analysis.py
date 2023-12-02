@@ -1,6 +1,7 @@
 import sys
 import os
 import copy
+import math
 
 import PySimpleGUI as sg
 
@@ -8,6 +9,7 @@ project_path = os.getcwd()+'/'
 sys.path.append(project_path)
 
 from decks import cards,dominion_cards
+from brains import brain_functions as bf
 
 
 
@@ -138,7 +140,7 @@ def gen_default_card_dicts():
     return kingdom_card_activation_dict, game_card_dict, all_cards_by_kind
 
 
-def gen_window( title, margins, game_card_list, kingdom_card_activation_dict, all_card_kind_dict ):
+def gen_kingdom_window( title, margins, game_card_list, kingdom_card_activation_dict, all_card_kind_dict ):
     gen_layout = gen_kingdom_display_layout(
         game_card_list,
         kingdom_card_activation_dict,
@@ -153,13 +155,316 @@ def gen_window( title, margins, game_card_list, kingdom_card_activation_dict, al
     )
 
 
+
+def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, cards_to_count=None, count=True ):
+    assert (len(name_color_label_tuple_list) == 3)
+    assert ( count != (cards_to_count is None) ), "If counting must provide list of card piles to count"
+    card_count = {}
+    if ( cards_to_count is not None ):
+        pile_count_list = [ pile.count_cards() for pile in cards_to_count ]
+        full_deck = bf.combine_deck_count( pile_count_list )
+
+    out_layout = []
+    for card in kingdom_cards:
+        button_list = []
+        for name_t, color_t, label_t in name_color_label_tuple_list:
+            button_list.append(
+                sg.Button( label_t, button_color=color_t, key="move_{}_{}_{}".format(name,name_t,card))
+            )
+        out_layout.append([sg.Text(card, key="{}_card_name".format(name))])
+        if count:
+            out_layout[-1] += sg.Text(
+                "{:2d}".format(
+                    0 if card not in full_deck else int(full_deck[card])
+                ),
+                key="{}_{}_count".format(name,card)
+            ),
+        out_layout[-1] += button_list
+    return out_layout
+
+
+def gen_game_move_buttons_col( name, name_color_label_tuple_list, kingdom_cards, cards_to_count=None, count=True ):
+    out_layout = gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, cards_to_count, count )
+    rotated_out_layout = [[x[i] for x in out_layout] for i in range(len(out_layout[0]))]
+    new_out = [ sg.Column([ [col] for col in row ]) for row in rotated_out_layout ]
+    return sg.Column( [new_out] )
+
+
+def gen_deck_stats( pile_list ):
+    pile_count_list = [ pile.count_cards() for pile in pile_list ]
+    full_deck = bf.combine_deck_count( pile_count_list )
+    analysis_deck = bf.analyze_deck( full_deck )
+    return analysis_deck
+
+
+def gen_stat_string_dict( stat_dict ):
+
+    max_char_len = max( [len(key) for key in stat_dict.keys()] )
+    name_format_str = "{:"+str(max_char_len)+"s}: "
+
+    out_dict = {}
+
+    for key, val in stat_dict.items():
+        out_dict[key] = (name_format_str+"{:0.3f}").format(key,val) if isinstance(val,float)             else (name_format_str+"{:5d}").format(key,val)
+
+    return out_dict
+
+
+def gen_formatted_stat_list( name, stat_dict, font = ('Ubuntu Mono',10), color = 'white', width = 3 ):
+
+    stat_strings = gen_stat_string_dict( stat_dict )
+
+    length = math.ceil( len(stat_dict) / 2. )
+    if ( (len(stat_dict) // 2) != length ):
+        length += 1
+
+    formatted_list = []
+    i = 1
+    this_list = []
+    for key, val in stat_strings.items():
+        if ( i % length == 0 ):
+            formatted_list.append(sg.Column(this_list))
+            this_list=[]
+        this_list.append([
+            sg.Text(
+                val,
+                text_color=color,
+                font=font,
+                key="status_{}_{}".format(name,key)
+            )
+        ])
+        i+=1
+    formatted_list.append(sg.Column(this_list))
+    return sg.Column([formatted_list])
+
+
+def gen_deck_stats_layout( name, pile_list ):
+    analysis_deck = gen_deck_stats( pile_list )
+    stat_layout_deck = gen_formatted_stat_list( name, analysis_deck )
+    return stat_layout_deck
+
+
+def gen_deck_stats_formatted( name, pile_list ):
+    return [[gen_deck_stats_layout(name,pile_list)]]
+
+
+def update_deck_stats( name, pile_list, window ):
+    analysis_deck = gen_deck_stats( pile_list )
+    stat_strings = gen_stat_string_dict( analysis_deck )
+
+    pile_count_list = [ pile.count_cards() for pile in pile_list ]
+    full_deck = bf.combine_deck_count( pile_count_list )
+
+    for key, val in stat_strings.items():
+        window["status_{}_{}".format(name,key)].update( val )
+
+    if ( name != 'deck' ):
+        for card, count in full_deck.items():
+            window["{}_{}_count".format(name,card)].update(
+                "{:2d}".format(
+                    0 if card not in full_deck else int(full_deck[card])
+                )
+            )
+
+
+def run_game_analysis_window( kind_card_list_dict ):
+    dc_all_cards = dominion_cards.all_valid_cards
+    print(kind_card_list_dict)
+    kingdom_dict = {}
+    for kind, card_list in kind_card_list_dict.items():
+        for card in card_list:
+            kingdom_dict[card] = cards.CardSupply( dc_all_cards[card], 1000 )
+    kingdom_cards = list(kingdom_dict.keys())
+    print(kingdom_cards)
+
+    hand = cards.CardPile('Hand')
+    draw = cards.CardPile('Draw')
+    discard = cards.CardPile('Discard')
+
+    if ( 'copper' in kingdom_cards ):
+        draw.topdeck( 7*[ dc_all_cards['copper'] ] )
+    if ( 'estate' in kingdom_cards ):
+        draw.topdeck( 3*[ dc_all_cards['estate'] ] )
+
+    k_color = "black"
+    d_color = "blue"
+    h_color = "red"
+    x_color = "dark green"
+    e_color = "white"
+    section_title_font = ('Axial',20)
+
+    layout_K  = [[sg.Text("Kingdom",text_color=k_color,font=section_title_font)],[sg.HSeparator()]]
+    buttons_K = gen_game_move_buttons_col(
+        "kingdom",
+        [
+            ( "draw"   , d_color, "D", ),
+            ( "hand"   , h_color, "H", ),
+            ( "discard", x_color, "X", ),
+        ],
+        kingdom_cards,
+        None,
+        False
+    )
+    layout_K = sg.Column( layout_K + [ [ buttons_K ] ] )
+
+    layout_D = [[sg.Text("Draw",text_color=d_color,font=section_title_font)],[sg.HSeparator()]]
+    cards_D = gen_game_move_buttons_col(
+        "draw",
+        [
+            ( "kingdom", k_color, "K", ),
+            ( "hand"   , h_color, "H", ),
+            ( "discard", x_color, "X", ),
+        ],
+        kingdom_cards,
+        [draw],
+        True
+    )
+    stat_layout_D = gen_deck_stats_layout( "draw", [draw] )
+    layout_D = sg.Column( layout_D + [ [ cards_D, stat_layout_D ] ] )
+
+    layout_H = [[sg.Text("Hand",text_color=h_color,font=section_title_font)],[sg.HSeparator()]]
+    cards_H = gen_game_move_buttons_col(
+        "hand",
+        [
+            ( "kingdom", k_color, "K", ),
+            ( "draw"   , d_color, "D", ),
+            ( "discard", x_color, "X", ),
+        ],
+        kingdom_cards,
+        [hand],
+        True
+    )
+    stat_layout_H = gen_deck_stats_layout( "hand", [hand] )
+    layout_H = sg.Column( layout_H + [ [ cards_H, stat_layout_H ] ] )
+
+    layout_X = [[sg.Text("Discard",text_color=x_color,font=section_title_font)],[sg.HSeparator()]]
+    cards_X = gen_game_move_buttons_col(
+        "discard",
+        [
+            ( "kingdom", k_color, "K", ),
+            ( "hand"   , h_color, "H", ),
+            ( "draw"   , d_color, "D", ),
+        ],
+        kingdom_cards,
+        [discard],
+        True
+    )
+    stat_layout_X = gen_deck_stats_layout( "discard", [discard] )
+    layout_X = sg.Column( layout_X + [ [ cards_X, stat_layout_X ] ] )
+
+    layout_Deck = [[sg.Text("Deck",text_color=e_color,font=section_title_font)],[sg.HSeparator()]]
+    stat_layout_Deck = gen_deck_stats_formatted(
+        "deck",
+        [hand,draw,discard]
+    )
+    layout_Deck = sg.Column( layout_Deck + stat_layout_Deck )
+
+    #tool_layout = [
+    #    [layout_K,sg.VSeparator(),layout_Deck],
+    #    [sg.HSeparator()],
+    #    [layout_D,sg.VSeparator(),layout_H,sg.VSeparator(),layout_X]
+    #]
+    left_col = [
+        [layout_K],
+        [sg.HSeparator()],
+        [layout_Deck],
+    ]
+    right_col = [
+        [layout_D],
+        [sg.HSeparator()],
+        [layout_H],
+        [sg.HSeparator()],
+        [layout_X],
+    ]
+    tool_layout = [
+        [
+            sg.Column(left_col),
+            sg.VSeparator(),
+            sg.Column(right_col)
+        ]
+    ]
+
+    window = sg.Window(
+        title="Analysis",
+        layout=tool_layout,
+    )
+
+    pile_name_list = ["kingdom","draw","hand","discard"]
+
+    pile_dict = {
+        'kingdom': kingdom_dict,
+        'draw': draw,
+        'hand': hand,
+        'discard': discard,
+    }
+
+    update_dict = {
+        'kingdom': ('deck',[draw,hand,discard]),
+        'draw': ('draw',[draw]),
+        'hand': ('hand',[hand]),
+        'discard': ('discard',[discard]),
+    }
+
+    while True:
+        event, values = window.read()
+        # End program if user closes window or
+        # presses the OK button
+        if (event == sg.WIN_CLOSED):
+            break
+
+        elif (event.startswith("move")):
+            e_parsed = event.split("_")
+            origin_pile = e_parsed[1]
+            destination_pile = e_parsed[2]
+            card_name = e_parsed[3]
+
+            origin = pile_dict[ origin_pile ]
+            destination = pile_dict[ destination_pile ]
+
+            n_cards = 0
+            if (
+                isinstance(origin,dict) and
+                (card_name in origin) and
+                isinstance(origin[card_name],cards.CardSupply)
+            ):
+                n_cards = origin[card_name].count()
+            elif ( isinstance(origin,cards.CardPile) ):
+                count_dict = origin.count_cards()
+                if ( card_name in count_dict ):
+                    n_cards = count_dict[card_name]
+
+            if ( n_cards > 0 ):
+                # Move card around
+                if ( isinstance(origin,cards.CardPile) ):
+                    origin.stack.remove( dc_all_cards[card_name] )
+
+                if ( isinstance(destination,cards.CardPile) ):
+                    destination.topdeck( dc_all_cards[card_name] )
+
+                # Update stats
+                for update_name in [origin_pile,destination_pile]:
+                    pile_to_update, piles = update_dict[update_name]
+                    update_deck_stats( pile_to_update, piles, window )
+
+    window.close()
+
+
+# In[59]:
+
+
+run_game_analysis_window({'victory':['estate'],'treasure':['copper'],'kingdom':['mine']})
+
+
+# In[60]:
+
+
 def main( inp_path = None ):
 
     kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
 
     this_game_name = default_game_name
 
-    window = gen_window(
+    window = gen_kingdom_window(
         default_window_title,
         default_window_margins,
         game_card_dict[this_game_name],
@@ -177,13 +482,26 @@ def main( inp_path = None ):
         elif ( event == "Kingdom_Reset" ):
             kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
             window.close()
-            window = gen_window(
+            window = gen_kingdom_window(
                 default_window_title,
                 default_window_margins,
                 game_card_dict[this_game_name],
                 kingdom_card_activation_dict,
                 all_cards_by_kind
             )
+            continue
+
+        elif ( event == "Kingdom_Accept" ):
+            cards_to_use = {}
+            for kind in all_cards_by_kind:
+                cards_to_use[kind] = []
+                for card in all_cards_by_kind[kind]:
+                    if ( kingdom_card_activation_dict[card] ):
+                        cards_to_use[kind].append(card)
+            stored_window = window
+            window.close()
+            run_game_analysis_window( cards_to_use )
+            window=stored_window
             continue
 
         # Update cards that are selected from a game
