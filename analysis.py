@@ -449,15 +449,6 @@ def run_game_analysis_window( kind_card_list_dict ):
     window.close()
 
 
-# In[59]:
-
-
-run_game_analysis_window({'victory':['estate'],'treasure':['copper'],'kingdom':['mine']})
-
-
-# In[60]:
-
-
 def main( inp_path = None ):
 
     kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
