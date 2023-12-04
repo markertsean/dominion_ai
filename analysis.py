@@ -415,8 +415,8 @@ def run_game_analysis_window( kind_card_list_dict ):
         "discard",
         [
             ( "kingdom", k_color, "K", ),
-            ( "hand"   , h_color, "H", ),
             ( "draw"   , d_color, "D", ),
+            ( "hand"   , h_color, "H", ),
         ],
         kingdom_cards,
         [discard],
@@ -506,7 +506,6 @@ def run_game_analysis_window( kind_card_list_dict ):
 
     while True:
         event, values = window.read()
-        print(event,values)
         # End program if user closes window or
         # presses the OK button
         if (event == sg.WIN_CLOSED):
