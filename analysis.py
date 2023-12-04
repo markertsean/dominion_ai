@@ -307,11 +307,12 @@ def gen_deck_stats_formatted( name, pile_list ):
 
 
 def update_deck_stats( name, pile_list, kingdom_cards, window ):
+    pile_count_list = [ pile.count_cards() for pile in pile_list ]
+    full_deck = bf.combine_deck_count( pile_count_list )
+
     analysis_deck = gen_deck_stats( pile_list )
     stat_strings = gen_stat_string_dict( analysis_deck )
 
-    pile_count_list = [ pile.count_cards() for pile in pile_list ]
-    full_deck = bf.combine_deck_count( pile_count_list )
 
     for key, val in stat_strings.items():
         window["status_{}_{}".format(name,key)].update( val )
@@ -338,32 +339,14 @@ def update_deck_stats( name, pile_list, kingdom_cards, window ):
                     window["move_{}_{}_{}".format(name,other_name,card)].update(
                         visible = visible_row
                     )
-    '''
-    if ( name != 'deck' ):
-        #for card, count in full_deck.items():
-        for card in kingdom_cards:
-            window["{}_{}_count".format(name,card)].update(
-                "{:2d}".format(
-                    0 if card not in full_deck else int(full_deck[card])
-                )
-            )
 
-            visible_row = False if (card not in full_deck) or (full_deck[card]<1) else True
 
-            window["{}_{}_name".format(name,card)].update(
-                visible = visible_row
-            )
-            window["{}_{}_count".format(name,card)].update(
-                visible = visible_row
-            )
-
-            for other_name in ['kingdom','draw','hand','discard']:
-                if ( name != other_name ):
-                    window["move_{}_{}_{}".format(name,other_name,card)].update(
-                        visible = visible_row
-                    )
-    '''
-
+def set_default_draw( drawpile, kingdom_cards, dc_all_cards ):
+    if ( 'copper' in kingdom_cards ):
+        drawpile.topdeck( 7*[ dc_all_cards['copper'] ] )
+    if ( 'estate' in kingdom_cards ):
+        drawpile.topdeck( 3*[ dc_all_cards['estate'] ] )
+    
 
 
 def run_game_analysis_window( kind_card_list_dict ):
@@ -378,11 +361,9 @@ def run_game_analysis_window( kind_card_list_dict ):
     draw = cards.CardPile('Draw')
     discard = cards.CardPile('Discard')
 
-    if ( 'copper' in kingdom_cards ):
-        draw.topdeck( 7*[ dc_all_cards['copper'] ] )
-    if ( 'estate' in kingdom_cards ):
-        draw.topdeck( 3*[ dc_all_cards['estate'] ] )
+    set_default_draw( draw, kingdom_cards, dc_all_cards )
 
+    
     k_color = "black"
     d_color = "blue"
     h_color = "red"
@@ -477,34 +458,20 @@ def run_game_analysis_window( kind_card_list_dict ):
     )
     layout_Deck = sg.Column( layout_Deck + [ [ cards_Deck, stat_layout_Deck ] ] )
 
-    '''
-    tool_layout = [
-        [layout_K,sg.VSeparator(),layout_Deck],
-        [sg.HSeparator()],
-        [layout_D,sg.VSeparator(),layout_H,sg.VSeparator(),layout_X]
-    ]
+
+    reset_button = sg.Button(
+        "Reset",
+        key="-reset-",
+    )
+
+
     left_col = [
-        [layout_K],
-        [sg.HSeparator()],
-        [layout_Deck],
-    ]
-    right_col = [
-        [layout_D],
-        [sg.HSeparator()],
-        [layout_H],
-        [sg.HSeparator()],
-        [layout_X],
-    ]
-    tool_layout = [
         [
-            sg.Column(left_col),
-            sg.VSeparator(),
-            sg.Column(right_col)
+            sg.Column([
+                [reset_button],
+                [layout_K],
+            ])
         ]
-    ]
-    '''
-    left_col = [
-        [layout_K],
     ]
     mid_col = [
         [layout_Deck],
@@ -553,6 +520,16 @@ def run_game_analysis_window( kind_card_list_dict ):
         # presses the OK button
         if (event == sg.WIN_CLOSED):
             break
+
+        elif (event=="-reset-"):
+            draw.stack = []
+            hand.stack = []
+            discard.stack = []
+            set_default_draw( draw, kingdom_cards, dc_all_cards )
+            
+            for name, pile_t in update_dict.items():
+                pile_to_update, piles = pile_t
+                update_deck_stats( pile_to_update, piles, kingdom_cards, window )
 
         elif (event.startswith("move")):
             e_parsed = event.split("_")
