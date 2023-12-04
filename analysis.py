@@ -175,6 +175,10 @@ def gen_game_move_buttons(
     if add_all:
         all_button = ['all']
 
+    card_name_len = 10
+    card_len_str_f = "{:"+str(card_name_len)+"s}"
+    font = ('Ubuntu Mono',14)
+
     out_layout = []
     for card in all_button+kingdom_cards:
         button_list = []
@@ -194,8 +198,9 @@ def gen_game_move_buttons(
             )
         out_layout.append([
             sg.Text(
-                card,
+                card_len_str_f.format(card),
                 key="{}_{}_name".format(name,card),
+                font=font,
                 visible=visible_row,
             )
         ])
@@ -210,6 +215,7 @@ def gen_game_move_buttons(
             out_layout[-1] += sg.Text(
                 "{:2s}".format(str(end_text)),
                 key="{}_{}_count".format(name,card),
+                font=font,
                 visible=visible_row,
             ),
         out_layout[-1] += button_list
@@ -371,7 +377,7 @@ def run_game_analysis_window( kind_card_list_dict ):
     layout_K = sg.Column( layout_K + [ [ buttons_K ] ] )
 
     layout_D = [[sg.Text("Draw",text_color=d_color,font=section_title_font)],[sg.HSeparator()]]
-    cards_D = gen_game_move_buttons_col(
+    cards_D = gen_game_move_buttons(
         "draw",
         [
             ( "kingdom", k_color, "K", ),
@@ -383,11 +389,12 @@ def run_game_analysis_window( kind_card_list_dict ):
         True,
         True
     )
+    cards_D = sg.Column(cards_D)
     stat_layout_D = gen_deck_stats_layout( "draw", [draw] )
     layout_D = sg.Column( layout_D + [ [ cards_D, stat_layout_D ] ] )
 
     layout_H = [[sg.Text("Hand",text_color=h_color,font=section_title_font)],[sg.HSeparator()]]
-    cards_H = gen_game_move_buttons_col(
+    cards_H = gen_game_move_buttons(
         "hand",
         [
             ( "kingdom", k_color, "K", ),
@@ -399,11 +406,12 @@ def run_game_analysis_window( kind_card_list_dict ):
         True,
         True
     )
+    cards_H = sg.Column(cards_H)
     stat_layout_H = gen_deck_stats_layout( "hand", [hand] )
     layout_H = sg.Column( layout_H + [ [ cards_H, stat_layout_H ] ] )
 
     layout_X = [[sg.Text("Discard",text_color=x_color,font=section_title_font)],[sg.HSeparator()]]
-    cards_X = gen_game_move_buttons_col(
+    cards_X = gen_game_move_buttons(
         "discard",
         [
             ( "kingdom", k_color, "K", ),
@@ -415,6 +423,7 @@ def run_game_analysis_window( kind_card_list_dict ):
         True,
         True
     )
+    cards_X = sg.Column(cards_X)
     stat_layout_X = gen_deck_stats_layout( "discard", [discard] )
     layout_X = sg.Column( layout_X + [ [ cards_X, stat_layout_X ] ] )
 
@@ -425,11 +434,12 @@ def run_game_analysis_window( kind_card_list_dict ):
     )
     layout_Deck = sg.Column( layout_Deck + stat_layout_Deck )
 
-    #tool_layout = [
-    #    [layout_K,sg.VSeparator(),layout_Deck],
-    #    [sg.HSeparator()],
-    #    [layout_D,sg.VSeparator(),layout_H,sg.VSeparator(),layout_X]
-    #]
+    '''
+    tool_layout = [
+        [layout_K,sg.VSeparator(),layout_Deck],
+        [sg.HSeparator()],
+        [layout_D,sg.VSeparator(),layout_H,sg.VSeparator(),layout_X]
+    ]
     left_col = [
         [layout_K],
         [sg.HSeparator()],
@@ -445,6 +455,29 @@ def run_game_analysis_window( kind_card_list_dict ):
     tool_layout = [
         [
             sg.Column(left_col),
+            sg.VSeparator(),
+            sg.Column(right_col)
+        ]
+    ]
+    '''
+    left_col = [
+        [layout_K],
+    ]
+    mid_col = [
+        [layout_Deck],
+        [sg.HSeparator()],
+        [layout_D],
+    ]
+    right_col = [
+        [layout_H],
+        [sg.HSeparator()],
+        [layout_X],
+    ]
+    tool_layout = [
+        [
+            sg.Column(left_col),
+            sg.VSeparator(),
+            sg.Column(mid_col),
             sg.VSeparator(),
             sg.Column(right_col)
         ]
