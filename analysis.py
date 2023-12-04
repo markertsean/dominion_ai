@@ -162,8 +162,9 @@ def gen_game_move_buttons(
     cards_to_count=None,
     count=True,
     add_all=False,
+    add_buttons=True,
 ):
-    assert (len(name_color_label_tuple_list) == 3)
+    assert (name_color_label_tuple_list is None) or (len(name_color_label_tuple_list) == 3)
     assert ( count != (cards_to_count is None) ), "If counting must provide list of card piles to count"
     card_count = {}
     full_deck = {}
@@ -187,15 +188,16 @@ def gen_game_move_buttons(
             (cards_to_count is None ) or
             ( True if card in full_deck else False )
         )
-        for name_t, color_t, label_t in name_color_label_tuple_list:
-            button_list.append(
-                sg.Button(
-                    label_t,
-                    button_color=color_t,
-                    key="move_{}_{}_{}".format(name,name_t,card),
-                    visible=visible_row,
+        if ( add_buttons ):
+            for name_t, color_t, label_t in name_color_label_tuple_list:
+                button_list.append(
+                    sg.Button(
+                        label_t,
+                        button_color=color_t,
+                        key="move_{}_{}_{}".format(name,name_t,card),
+                        visible=visible_row,
+                    )
                 )
-            )
         out_layout.append([
             sg.Text(
                 card_len_str_f.format(card),
@@ -229,6 +231,7 @@ def gen_game_move_buttons_col(
     cards_to_count=None,
     count=True,
     add_all=False,
+    add_buttons=True,
 ):
     out_layout = gen_game_move_buttons(
         name,
@@ -236,7 +239,8 @@ def gen_game_move_buttons_col(
         kingdom_cards,
         cards_to_count,
         count,
-        add_all
+        add_all,
+        add_buttons,
     )
     rotated_out_layout = [[x[i] for x in out_layout] for i in range(len(out_layout[0]))]
     new_out = [ sg.Column([ [col] for col in row ]) for row in rotated_out_layout ]
@@ -312,6 +316,29 @@ def update_deck_stats( name, pile_list, kingdom_cards, window ):
     for key, val in stat_strings.items():
         window["status_{}_{}".format(name,key)].update( val )
 
+    for card in kingdom_cards:
+        window["{}_{}_count".format(name,card)].update(
+            "{:2d}".format(
+                0 if card not in full_deck else int(full_deck[card])
+            )
+        )
+
+        visible_row = False if (card not in full_deck) or (full_deck[card]<1) else True
+
+        window["{}_{}_name".format(name,card)].update(
+            visible = visible_row
+        )
+        window["{}_{}_count".format(name,card)].update(
+            visible = visible_row
+        )
+
+        if ( name != 'deck' ):
+            for other_name in ['kingdom','draw','hand','discard']:
+                if ( name != other_name ):
+                    window["move_{}_{}_{}".format(name,other_name,card)].update(
+                        visible = visible_row
+                    )
+    '''
     if ( name != 'deck' ):
         #for card, count in full_deck.items():
         for card in kingdom_cards:
@@ -335,6 +362,7 @@ def update_deck_stats( name, pile_list, kingdom_cards, window ):
                     window["move_{}_{}_{}".format(name,other_name,card)].update(
                         visible = visible_row
                     )
+    '''
 
 
 
@@ -372,7 +400,9 @@ def run_game_analysis_window( kind_card_list_dict ):
         ],
         kingdom_cards,
         None,
-        False
+        False,
+        False,
+        True,
     )
     layout_K = sg.Column( layout_K + [ [ buttons_K ] ] )
 
@@ -387,7 +417,8 @@ def run_game_analysis_window( kind_card_list_dict ):
         kingdom_cards,
         [draw],
         True,
-        True
+        True,
+        True,
     )
     cards_D = sg.Column(cards_D)
     stat_layout_D = gen_deck_stats_layout( "draw", [draw] )
@@ -404,7 +435,8 @@ def run_game_analysis_window( kind_card_list_dict ):
         kingdom_cards,
         [hand],
         True,
-        True
+        True,
+        True,
     )
     cards_H = sg.Column(cards_H)
     stat_layout_H = gen_deck_stats_layout( "hand", [hand] )
@@ -421,18 +453,29 @@ def run_game_analysis_window( kind_card_list_dict ):
         kingdom_cards,
         [discard],
         True,
-        True
+        True,
+        True,
     )
     cards_X = sg.Column(cards_X)
     stat_layout_X = gen_deck_stats_layout( "discard", [discard] )
     layout_X = sg.Column( layout_X + [ [ cards_X, stat_layout_X ] ] )
 
     layout_Deck = [[sg.Text("Deck",text_color=e_color,font=section_title_font)],[sg.HSeparator()]]
-    stat_layout_Deck = gen_deck_stats_formatted(
+    cards_Deck = gen_game_move_buttons(
+        "deck",
+        None,
+        kingdom_cards,
+        [draw,hand,discard],
+        True,
+        False,
+        False,
+    )
+    cards_Deck = sg.Column(cards_Deck)
+    stat_layout_Deck = gen_deck_stats_layout(
         "deck",
         [hand,draw,discard]
     )
-    layout_Deck = sg.Column( layout_Deck + stat_layout_Deck )
+    layout_Deck = sg.Column( layout_Deck + [ [ cards_Deck, stat_layout_Deck ] ] )
 
     '''
     tool_layout = [
