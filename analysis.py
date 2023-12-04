@@ -155,8 +155,14 @@ def gen_kingdom_window( title, margins, game_card_list, kingdom_card_activation_
     )
 
 
-
-def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, cards_to_count=None, count=True ):
+def gen_game_move_buttons(
+    name,
+    name_color_label_tuple_list,
+    kingdom_cards,
+    cards_to_count=None,
+    count=True,
+    add_all=False,
+):
     assert (len(name_color_label_tuple_list) == 3)
     assert ( count != (cards_to_count is None) ), "If counting must provide list of card piles to count"
     card_count = {}
@@ -165,10 +171,15 @@ def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, car
         pile_count_list = [ pile.count_cards() for pile in cards_to_count ]
         full_deck = bf.combine_deck_count( pile_count_list )
 
+    all_button = []
+    if add_all:
+        all_button = ['all']
+
     out_layout = []
-    for card in kingdom_cards:
+    for card in all_button+kingdom_cards:
         button_list = []
         visible_row = (
+            ( card == 'all' ) or
             (cards_to_count is None ) or
             ( True if card in full_deck else False )
         )
@@ -189,10 +200,15 @@ def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, car
             )
         ])
         if count:
-            out_layout[-1] += sg.Text(
-                "{:2d}".format(
+            end_text = None
+            if ( card =='all' ):
+                end_text = ""
+            else:
+                end_text = "{:2d}".format(
                     0 if card not in full_deck else int(full_deck[card])
-                ),
+                )
+            out_layout[-1] += sg.Text(
+                "{:2s}".format(str(end_text)),
                 key="{}_{}_count".format(name,card),
                 visible=visible_row,
             ),
@@ -200,8 +216,22 @@ def gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, car
     return out_layout
 
 
-def gen_game_move_buttons_col( name, name_color_label_tuple_list, kingdom_cards, cards_to_count=None, count=True ):
-    out_layout = gen_game_move_buttons( name, name_color_label_tuple_list, kingdom_cards, cards_to_count, count )
+def gen_game_move_buttons_col(
+    name,
+    name_color_label_tuple_list,
+    kingdom_cards,
+    cards_to_count=None,
+    count=True,
+    add_all=False,
+):
+    out_layout = gen_game_move_buttons(
+        name,
+        name_color_label_tuple_list,
+        kingdom_cards,
+        cards_to_count,
+        count,
+        add_all
+    )
     rotated_out_layout = [[x[i] for x in out_layout] for i in range(len(out_layout[0]))]
     new_out = [ sg.Column([ [col] for col in row ]) for row in rotated_out_layout ]
     return sg.Column( [new_out] )
@@ -304,13 +334,11 @@ def update_deck_stats( name, pile_list, kingdom_cards, window ):
 
 def run_game_analysis_window( kind_card_list_dict ):
     dc_all_cards = dominion_cards.all_valid_cards
-    print(kind_card_list_dict)
     kingdom_dict = {}
     for kind, card_list in kind_card_list_dict.items():
         for card in card_list:
             kingdom_dict[card] = cards.CardSupply( dc_all_cards[card], 1000 )
     kingdom_cards = list(kingdom_dict.keys())
-    print(kingdom_cards)
 
     hand = cards.CardPile('Hand')
     draw = cards.CardPile('Draw')
@@ -352,6 +380,7 @@ def run_game_analysis_window( kind_card_list_dict ):
         ],
         kingdom_cards,
         [draw],
+        True,
         True
     )
     stat_layout_D = gen_deck_stats_layout( "draw", [draw] )
@@ -367,6 +396,7 @@ def run_game_analysis_window( kind_card_list_dict ):
         ],
         kingdom_cards,
         [hand],
+        True,
         True
     )
     stat_layout_H = gen_deck_stats_layout( "hand", [hand] )
@@ -382,6 +412,7 @@ def run_game_analysis_window( kind_card_list_dict ):
         ],
         kingdom_cards,
         [discard],
+        True,
         True
     )
     stat_layout_X = gen_deck_stats_layout( "discard", [discard] )
@@ -442,6 +473,7 @@ def run_game_analysis_window( kind_card_list_dict ):
 
     while True:
         event, values = window.read()
+        print(event,values)
         # End program if user closes window or
         # presses the OK button
         if (event == sg.WIN_CLOSED):
@@ -467,16 +499,23 @@ def run_game_analysis_window( kind_card_list_dict ):
                 count_dict = origin.count_cards()
                 if ( card_name in count_dict ):
                     n_cards = count_dict[card_name]
-
-            print(card_name,n_cards)
+                elif ( card_name == 'all' ):
+                    for key, val in count_dict.items():
+                        n_cards += val
 
             if ( n_cards > 0 ):
                 # Move card around
-                if ( isinstance(origin,cards.CardPile) ):
-                    origin.stack.remove( dc_all_cards[card_name] )
-
                 if ( isinstance(destination,cards.CardPile) ):
-                    destination.topdeck( dc_all_cards[card_name] )
+                    if ( card_name == 'all' ):
+                        destination.stack += origin.stack
+                    else:
+                        destination.topdeck( dc_all_cards[card_name] )
+
+                if ( isinstance(origin,cards.CardPile) ):
+                    if ( card_name == 'all' ):
+                        origin.stack = []
+                    else:
+                        origin.stack.remove( dc_all_cards[card_name] )
 
                 # Update stats
                 for update_name in [origin_pile,destination_pile]:
@@ -503,7 +542,6 @@ def main( inp_path = None ):
     while True:
 
         event, values = window.read()
-        print(event,values)
         if ( event == sg.WIN_CLOSED ):
             break
 
