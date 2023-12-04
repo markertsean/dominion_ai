@@ -30,7 +30,7 @@ default_kingdom_selector_layout_start = [
 
 default_kingdom_selector_layout_end = [
     [sg.HSeparator(pad=(kingdom_select_pad_hspace,kingdom_select_pad_vspace))],
-    [sg.Button("Accept",key='Kingdom_Accept'),sg.Button("Reset",key='Kingdom_Reset')]
+    [sg.Button("Accept",key='Kingdom=Accept'),sg.Button("Reset",key='Kingdom=Reset')]
 ]
 
 default_window_title = "Dominion Hand Analyzer"
@@ -50,7 +50,7 @@ def gen_selectable_card_buttons_from_kingdom( inp_game_card_list, kingdom_card_s
             sg.Button(
                 card,
                 button_color=get_button_color( kingdom_card_status_dict[card] ),
-                key="supply_"+card,
+                key="supply={}".format(card),
             )
         )
     return out_button_list
@@ -90,7 +90,7 @@ def gen_kingdom_display_layout( inp_game_card_list, kingdom_card_status_dict, al
                 card_name,
                 button_color=get_button_color( kingdom_card_status_dict[card_name] ),
                 visible=kingdom_card_status_dict[card_name],
-                key="kingdom_"+card_name,
+                key="kingdom={}".format(card_name),
             )
             kingdom_kind_dict[kind].append( button )
         kingdom_kind_formatted_dict[kind] = gen_formatted_button_list( kingdom_kind_dict[kind] )
@@ -194,14 +194,14 @@ def gen_game_move_buttons(
                     sg.Button(
                         label_t,
                         button_color=color_t,
-                        key="move_{}_{}_{}".format(name,name_t,card),
+                        key="move={}={}={}".format(name,name_t,card),
                         visible=visible_row,
                     )
                 )
         out_layout.append([
             sg.Text(
                 card_len_str_f.format(card),
-                key="{}_{}_name".format(name,card),
+                key="{}={}=name".format(name,card),
                 font=font,
                 visible=visible_row,
             )
@@ -216,7 +216,7 @@ def gen_game_move_buttons(
                 )
             out_layout[-1] += sg.Text(
                 "{:2s}".format(str(end_text)),
-                key="{}_{}_count".format(name,card),
+                key="{}={}=count".format(name,card),
                 font=font,
                 visible=visible_row,
             ),
@@ -288,7 +288,7 @@ def gen_formatted_stat_list( name, stat_dict, font = ('Ubuntu Mono',10), color =
                 val,
                 text_color=color,
                 font=font,
-                key="status_{}_{}".format(name,key)
+                key="status={}={}".format(name,key)
             )
         ])
         i+=1
@@ -315,10 +315,10 @@ def update_deck_stats( name, pile_list, kingdom_cards, window ):
 
 
     for key, val in stat_strings.items():
-        window["status_{}_{}".format(name,key)].update( val )
+        window["status={}={}".format(name,key)].update( val )
 
     for card in kingdom_cards:
-        window["{}_{}_count".format(name,card)].update(
+        window["{}={}=count".format(name,card)].update(
             "{:2d}".format(
                 0 if card not in full_deck else int(full_deck[card])
             )
@@ -326,17 +326,17 @@ def update_deck_stats( name, pile_list, kingdom_cards, window ):
 
         visible_row = False if (card not in full_deck) or (full_deck[card]<1) else True
 
-        window["{}_{}_name".format(name,card)].update(
+        window["{}={}=name".format(name,card)].update(
             visible = visible_row
         )
-        window["{}_{}_count".format(name,card)].update(
+        window["{}={}=count".format(name,card)].update(
             visible = visible_row
         )
 
         if ( name != 'deck' ):
             for other_name in ['kingdom','draw','hand','discard']:
                 if ( name != other_name ):
-                    window["move_{}_{}_{}".format(name,other_name,card)].update(
+                    window["move={}={}={}".format(name,other_name,card)].update(
                         visible = visible_row
                     )
 
@@ -532,7 +532,7 @@ def run_game_analysis_window( kind_card_list_dict ):
                 update_deck_stats( pile_to_update, piles, kingdom_cards, window )
 
         elif (event.startswith("move")):
-            e_parsed = event.split("_")
+            e_parsed = event.split("=")
             origin_pile = e_parsed[1]
             destination_pile = e_parsed[2]
             card_name = e_parsed[3]
@@ -597,7 +597,7 @@ def main( inp_path = None ):
         if ( event == sg.WIN_CLOSED ):
             break
 
-        elif ( event == "Kingdom_Reset" ):
+        elif ( event == "Kingdom=Reset" ):
             kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
             window.close()
             window = gen_kingdom_window(
@@ -609,7 +609,7 @@ def main( inp_path = None ):
             )
             continue
 
-        elif ( event == "Kingdom_Accept" ):
+        elif ( event == "Kingdom=Accept" ):
             cards_to_use = {}
             for kind in all_cards_by_kind:
                 cards_to_use[kind] = []
@@ -624,12 +624,12 @@ def main( inp_path = None ):
 
         # Update cards that are selected from a game
         for card_name in game_card_dict[this_game_name]:
-            if ( event in ("supply_"+card_name,"kingdom_"+card_name) ):
+            if ( event in ("supply={}".format(card_name),"kingdom={}".format(card_name)) ):
                 kingdom_card_activation_dict[card_name] = not kingdom_card_activation_dict[card_name]
-                window["supply_"+card_name].update(
+                window["supply={}".format(card_name)].update(
                     button_color = get_button_color( kingdom_card_activation_dict[card_name] )
                 )
-                window["kingdom_"+card_name].update(
+                window["kingdom={}".format(card_name)].update(
                     button_color = get_button_color( kingdom_card_activation_dict[card_name] ),
                     visible = kingdom_card_activation_dict[card_name]
                 )
