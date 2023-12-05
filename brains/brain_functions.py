@@ -70,12 +70,18 @@ def analyze_deck( inp_card_dict, normalize=True ):
     for item in modified_fields:
         result_dict[item+"_mod"] += result_dict[item]
 
-    if ( normalize ):
+    if ( isinstance(normalize,bool) and normalize ):
         for key in result_dict:
             if ( key != "n_cards" ):
                 result_dict[key] = result_dict[key] / ( result_dict["n_cards"] + 1e-7 )
             else:
                 result_dict[key] = result_dict[key] / 10.
+
+    elif ( isinstance(normalize,str) and (normalize=='readable') ):
+        for key in result_dict:
+            if ( key != "n_cards" ):
+                result_dict[key] = result_dict[key] / ( result_dict["n_cards"] + 1e-7 )
+
     return result_dict
 
 

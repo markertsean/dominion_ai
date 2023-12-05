@@ -250,7 +250,7 @@ def gen_game_move_buttons_col(
 def gen_deck_stats( pile_list ):
     pile_count_list = [ pile.count_cards() for pile in pile_list ]
     full_deck = bf.combine_deck_count( pile_count_list )
-    analysis_deck = bf.analyze_deck( full_deck )
+    analysis_deck = bf.analyze_deck( full_deck, normalize='readable' )
     return analysis_deck
 
 
