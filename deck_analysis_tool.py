@@ -10,7 +10,7 @@ sys.path.append(project_path)
 
 from decks import cards,dominion_cards
 from brains import brain_functions as bf
-
+from analysis import deck_analysis_gui as dag
 
 
 game_ref = dominion_cards.game_expansion_reference
@@ -585,58 +585,47 @@ def run_game_analysis_window( kind_card_list_dict ):
     return
 
 
-def main( inp_path = None ):
+def main():
 
-    kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
-
-    this_game_name = default_game_name
-
-    window = gen_kingdom_window(
-        default_window_title,
-        default_window_margins,
-        game_card_dict[this_game_name],
-        kingdom_card_activation_dict,
-        all_cards_by_kind
-    )
+    kingdom_builder = dag.Kingdom_Selector_Window()
 
     while True:
 
-        event, values = window.read()
+        event, values = kingdom_builder.window.read()
         if ( event == sg.WIN_CLOSED ):
             break
 
         elif ( event == "Kingdom=Reset" ):
-            kingdom_card_activation_dict, game_card_dict, all_cards_by_kind = gen_default_card_dicts()
-            window.close()
-            window = gen_kingdom_window(
-                default_window_title,
-                default_window_margins,
-                game_card_dict[this_game_name],
-                kingdom_card_activation_dict,
-                all_cards_by_kind
-            )
+            kingdom_builder.reset_window()
             continue
 
-        elif ( event == "Kingdom=Accept" ):
-            cards_to_use = {}
-            for kind in all_cards_by_kind:
-                cards_to_use[kind] = []
-                for card in all_cards_by_kind[kind]:
-                    if ( kingdom_card_activation_dict[card] ):
-                        cards_to_use[kind].append(card)
-            run_game_analysis_window( cards_to_use )
-            continue
+        #elif ( event == "Kingdom=Accept" ):
+        #    cards_to_use = {}
+        #    for kind in all_cards_by_kind:
+        #        cards_to_use[kind] = []
+        #        for card in all_cards_by_kind[kind]:
+        #            if ( kingdom_card_activation_dict[card] ):
+        #                cards_to_use[kind].append(card)
+        #    run_game_analysis_window( cards_to_use )
+        #    continue
 
         # Update cards that are selected from a game
-        for card_name in game_card_dict[this_game_name]:
+        for card_name in kingdom_builder.kingdom_card_activation_dict.keys():
             if ( event in ("supply={}".format(card_name),"kingdom={}".format(card_name)) ):
-                kingdom_card_activation_dict[card_name] = not kingdom_card_activation_dict[card_name]
-                window["supply={}".format(card_name)].update(
-                    button_color = get_button_color( kingdom_card_activation_dict[card_name] )
+
+                kingdom_builder.kingdom_card_activation_dict[card_name] = \
+                    not kingdom_builder.kingdom_card_activation_dict[card_name]
+
+                card_on = kingdom_builder.kingdom_card_activation_dict[card_name]
+                color   = kingdom_builder.get_button_color( card_on )
+
+                kingdom_builder.window["supply={}".format(card_name)].update(
+                    button_color = color
                 )
-                window["kingdom={}".format(card_name)].update(
-                    button_color = get_button_color( kingdom_card_activation_dict[card_name] ),
-                    visible = kingdom_card_activation_dict[card_name]
+
+                kingdom_builder.window["kingdom={}".format(card_name)].update(
+                    button_color = color,
+                    visible = card_on
                 )
 
                 break
@@ -645,4 +634,4 @@ def main( inp_path = None ):
 
 
 if ( __name__=='__main__' ):
-    main(project_path)
+    main()
