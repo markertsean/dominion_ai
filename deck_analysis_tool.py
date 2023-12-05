@@ -463,12 +463,16 @@ def run_game_analysis_window( kind_card_list_dict ):
         "Reset",
         key="-reset-",
     )
+    close_button = sg.Button(
+        "Close",
+        key="-close-",
+    )
 
 
     left_col = [
         [
             sg.Column([
-                [reset_button],
+                [reset_button,sg.VSeparator(),close_button],
                 [layout_K],
             ])
         ]
@@ -531,6 +535,9 @@ def run_game_analysis_window( kind_card_list_dict ):
                 pile_to_update, piles = pile_t
                 update_deck_stats( pile_to_update, piles, kingdom_cards, window )
 
+        elif ((event=="-close-") or (event==sg.WIN_CLOSED)):
+            break
+
         elif (event.startswith("move")):
             e_parsed = event.split("=")
             origin_pile = e_parsed[1]
@@ -575,6 +582,7 @@ def run_game_analysis_window( kind_card_list_dict ):
                     update_deck_stats( pile_to_update, piles, kingdom_cards, window )
 
     window.close()
+    return
 
 
 def main( inp_path = None ):
@@ -616,10 +624,7 @@ def main( inp_path = None ):
                 for card in all_cards_by_kind[kind]:
                     if ( kingdom_card_activation_dict[card] ):
                         cards_to_use[kind].append(card)
-            stored_window = window
-            window.close()
             run_game_analysis_window( cards_to_use )
-            window=stored_window
             continue
 
         # Update cards that are selected from a game
