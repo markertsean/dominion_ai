@@ -358,3 +358,18 @@ class CardSupply:
 
     def copy(self):
         return CardSupply( self.card, self.orig_n )
+
+
+def combine_deck_count( deck_list ):
+    output_dict = {}
+    if isinstance(deck_list,dict):
+        deck_list = list(deck_list.values())
+    for this_deck in deck_list:
+        assert isinstance(this_deck,CardPile)
+        deck_count = this_deck.count_cards()
+        for key, val in deck_count.items():
+            if ( key in output_dict ):
+                output_dict[key] += val
+            else:
+                output_dict[key] = val
+    return output_dict
