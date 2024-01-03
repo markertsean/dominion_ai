@@ -143,23 +143,38 @@ class QTree(q_learning.QLearner):
                 return True
         return False
 
-    def expected_n_cards_from_prob( self, card_name, k_pick, n_draw, prob_dict ):
-        out_n = 0
-        count_dict = {}
-        for key, val in prob_dict.items():
-            count_dict[key] = val * n_draw
+    def expected_n_cards_from_count( self, k_pick, n_card, n_other, depth = 0 ):
+        if ( ( k_pick <= 0 ) or ( n_card <= 0 ) ):
+            return 0.
 
-        self.printd(card_name)
-        self.printd(k_pick)
-        self.printd(n_draw)
-        self.printd(prob_dict)
-        self.printd(count_dict)
+        # Probability of drawing our card
+        pc = n_card / ( 1. * n_card + n_other )
+        pn = 1. - pc
 
-        for i in range( 0, k_pick ):
-            out_n += max( (count_dict[card_name] - i) / ( n_draw - i ), 0 )
-            self.printd("\t",out_n)
+        out_c = out_n = 0.
 
-        return out_n
+        # Count 1 if card drawn, then propogate the probability with expectation from next draw
+        # Otherwise, 0 and expectation for next draw
+        if ( n_card > 0 ):
+            out_c = pc * ( 1. + self.expected_n_cards_from_count( k_pick-1, n_card-1, n_other   ,depth+1) )
+        if ( n_other > 0 ):
+            out_n = pn * ( 0. + self.expected_n_cards_from_count( k_pick-1, n_card  , n_other-1 ,depth+1) )
+
+        return out_c+out_n
+
+    def expected_n_cards_from_prob( self, card_name, k_pick, n_in_pile, prob_dict ):
+        if (
+            ( k_pick <= 0 ) or
+            ( n_in_pile <= 0 ) or
+            ( card_name not in prob_dict ) or
+            ( prob_dict[card_name] == 0 )
+        ):
+            return 0.
+
+        n_card = prob_dict[card_name] * n_in_pile
+        n_other = n_in_pile - n_card
+
+        return self.expected_n_cards_from_count( k_pick, n_card, n_other )
 
     def reward( self, card ):
         card = self.convert_to_card(card)
