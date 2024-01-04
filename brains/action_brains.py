@@ -106,6 +106,9 @@ class ActionAttributePrioritizer(ActionBrain):
         return None
 
 
+shared_q_tree_expected_count_dict = {}
+
+
 class QTree(q_learning.QLearner):
     def __init__( self, gamma=0.5, max_depth=5 ):
         self.name = "q_brain"
@@ -116,7 +119,7 @@ class QTree(q_learning.QLearner):
         self.state_keys = set( self.card_field_order + ['hand_pile','draw_pile','discard_pile'] )
         self.debug=False
 
-        self._expected_count_dict = {}
+        self._expected_count_dict = shared_q_tree_expected_count_dict
 
     # Allows either passing action as string or DominionCard type, returns latter
     def convert_to_card( self, card_or_name ):
