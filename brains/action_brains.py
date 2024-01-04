@@ -20,8 +20,12 @@ class ActionBrain:
 class ActionRandom(ActionBrain):
     def __init__(self):
         self.name="action_random"
-    def choose_action(self,inp_card_list):
-        return random.choice( inp_card_list )
+    def choose_action(self,inp_state_dict):
+        action_card_list = [None]
+        for card in set(inp_state_dict['hand_pile'].stack):
+            if ( 'action' in card.type ):
+                action_card_list.append(card)
+        return random.choice( action_card_list )
 
 # Increase number of actions if possible, else, draws, else, others
 # Settings format is "player_1_action_brain=attribute_prioritizer throne_room,action,draw,chancellor,ability False"
@@ -72,11 +76,9 @@ class ActionAttributePrioritizer(ActionBrain):
             return random.choice(card_list)
         return None
 
-    def choose_action(self,inp_card_list):
-        card_list = []
-        if ( None in inp_card_list ):
-            card_list=[None]
-        card_list += [ card for card in inp_card_list if card is not None and 'action' in card.type ]
+    def choose_action(self,inp_state_dict):
+        card_list=[None]
+        card_list += [ card for card in inp_state_dict['hand_pile'].stack if 'action' in card.type ]
         card_list = list(set(card_list))
         card_names = {}
         for card in card_list:
@@ -113,11 +115,6 @@ class QTree(q_learning.QLearner):
         self.card_field_order = ['action','buy','draw','coin','vp']
         self.state_keys = set( self.card_field_order + ['hand_pile','draw_pile','discard_pile'] )
         self.debug=False
-
-    # TODO: remove
-    def printd( self, *args ):
-        if ( self.debug ):
-            print(*args)
 
     # Allows either passing action as string or DominionCard type, returns latter
     def convert_to_card( self, card_or_name ):
@@ -204,7 +201,7 @@ class QTree(q_learning.QLearner):
 
     # Q for playing card "action" from hand in "all_deck_dict" (state)
     def value_function( self, state_dict, action ):
-        assert set(state_dict.keys()) == self.state_keys
+        assert set( state_dict.keys() ).issuperset( self.state_keys )
 
         if ( not self.usable_card( action ) ):
             return np.zeros( len( self.card_field_order ) )
@@ -262,23 +259,12 @@ class QTree(q_learning.QLearner):
         n_in_next_draw_pile = 0
         #proba_draw_pile = cards.CardPile('prob',draw.stack.copy())
 
-        #self.debug=True
-        self.printd('-'*depth,"hand",state_dict['hand_pile'].count_cards())
-        self.printd('-'*depth,"draw",state_dict['draw_pile'].count_cards())
-        self.printd('-'*depth,"discard",state_dict['discard_pile'].count_cards())
-
-        for field in self.card_field_order:
-            self.printd('-'*depth,field,state_dict[field])
-
-        self.printd('-'*depth,"def draw",definitely_draw)
-        self.printd('-'*depth,"def discard",definitely_discard)
-
         if ( state_dict['draw'] > 0 ):
             draw_proba = False
 
             # If will draw all of draw pile, will add them to hand
-            if ( new_draw_count >= draw.n_cards() ):
-                definitely_draw = draw.count_cards()
+            if ( new_draw_count >= state_dict['draw_pile'].n_cards() ):
+                definitely_draw = state_dict['draw_pile'].count_cards()
                 new_draw = cards.CardPile('new_draw_pile',[])
                 new_draw_count -= sum(definitely_draw.values())
 
@@ -291,8 +277,8 @@ class QTree(q_learning.QLearner):
                     probably_draw[key] = val / n_in_next_draw_pile
 
             if ( not draw_proba ):
-                if ( new_draw_count >= discard.n_cards() ):
-                    definitely_discard = discard.count_cards()
+                if ( new_draw_count >= state_dict['discard_pile'].n_cards() ):
+                    definitely_discard = state_dict['discard_pile'].count_cards()
                     new_discard = cards.CardPile('new_discard_pile',[])
                     new_draw_count -= sum(definitely_discard.values())
 
@@ -302,19 +288,12 @@ class QTree(q_learning.QLearner):
                     for key, val in probably_discard.items():
                         probably_discard[key] = val / n_in_next_draw_pile
 
-        self.printd('-'*depth,"def draw",definitely_draw)
-        self.printd('-'*depth,"def discard",definitely_discard)
-        self.printd('-'*depth,"prob draw",probably_draw)
-        self.printd('-'*depth,"prob discard",probably_discard)
-        # need ro recursively call function, using hand + definitely draw, run probably draw somehow
 
         new_hand = cards.CardPile('new_hand',state_dict['hand_pile'].stack.copy())
-        self.printd('-'*depth,"New Hand pre",new_hand.count_cards())
         # Add cards we will definitely draw to the hand
         for draw_count_dict in [definitely_draw,definitely_discard]:
             for def_card, count in draw_count_dict.items():
                 new_hand.topdeck( [dominion_cards.all_valid_cards[def_card]] * count )
-        self.printd('-'*depth,"New Hand post",new_hand.count_cards())
 
         # Need to count treasures in reward, not through action card format
         treasure_reward = np.zeros( len( self.card_field_order ) )
@@ -326,12 +305,7 @@ class QTree(q_learning.QLearner):
             ):
                 treasure_reward += self.reward( card )
                 all_hand_cards.remove( card )
-        self.printd('-'*depth,"new_hand_stack",new_hand.count_cards())
-        #self.printd('-'*depth,"all_hand_cards",all_hand_cards)
         new_hand.stack = all_hand_cards
-        self.printd('-'*depth,"new_hand_stack",new_hand.count_cards())
-        self.printd('-'*depth,"def treasure drawn",treasure_reward)
-        self.printd('-'*depth,"New Hand post treasure",new_hand.count_cards())
 
         prob_comb = probably_draw.copy()
         prob_comb.update( probably_discard )
@@ -346,9 +320,6 @@ class QTree(q_learning.QLearner):
         new_state_dict['draw_pile'] = new_draw
         new_state_dict['discard_pile'] = new_discard
         new_state_dict['draw'] = new_draw_count
-        self.printd('-'*depth,"New hand",new_hand.count_cards())
-        self.printd('-'*depth,"New draw",new_draw.count_cards())
-        self.printd('-'*depth,"New discard",new_discard.count_cards())
 
         pi_s_a_all = self.policy( new_state_dict, None ) # No need to pass action, 1/n_cards
 
@@ -356,11 +327,7 @@ class QTree(q_learning.QLearner):
         r_2_list = []
         t_list = []
 
-        self.printd('-'*depth,'action cards',possible_card_set)
-
         for card_name in possible_card_set:
-
-            self.printd('-'*depth,'card_name',card_name)
 
             card = self.convert_to_card( card_name )
 
@@ -370,11 +337,8 @@ class QTree(q_learning.QLearner):
             if ( card_name not in new_hand_card_name_set ):
                 P_a_ss = 1 - np.power( 1 - prob_comb[card_name], new_draw_count )
 
-            self.printd('-'*depth,'P_a_ss',P_a_ss)
             # If a treasure card drawn, won't change state, just save treasure reward
             if ( not self.usable_card( card ) ):
-                self.printd('-'*depth,'Base T reward',self.reward( card ))
-                self.printd('-'*depth,'P T reward',P_a_ss * self.reward( card ))
                 if ( card_name in new_hand_card_name_set ):
                     t_list.append( P_a_ss * self.reward( card ) * new_hand.count_cards()[card_name] )
                 else:
@@ -389,7 +353,6 @@ class QTree(q_learning.QLearner):
                 continue
 
 
-            self.printd('-'*depth,'playing card')
             r_1_list.append( pi_s_a_all * P_a_ss * self.reward(card_name) )
             # V^pi(s) = SUM_a pi(s,a) SUM_s' P^a_ss' R^a_ss' + g SUM_a pi(s,a) SUM_s' P^a_ss' V^pi(s')
 
@@ -412,13 +375,205 @@ class QTree(q_learning.QLearner):
                 play_disc.remove( card )
                 play_state_dict['discard_pile'].stack = play_disc
 
-            self.printd('-'*depth,'state',play_state_dict)
             r_2_list.append( self.gamma * pi_s_a_all * P_a_ss * self.state_value( play_state_dict , depth+1 ) )
-            self.printd('-'*depth,r_1_list[-1],r_2_list[-1])
 
         return sum( r_1_list ) + sum( r_2_list ) + treasure_reward + sum( t_list )
+
+
+'''
+Wrapper for QTree brain.
+QTree determines the best card to play based on cards remaining in draw/discard piles.
+This is an expensive computation, so the wrapper will by default
+hash the game state to save time efficiency.
+This could balloon for hands with many many cards, if so hashing results
+should be disabled.
+Time test on small hands:
+Calc 10,000x ~37. s
+Hash 10,000x ~0.1 s
+'''
+class QActionBrain(ActionBrain):
+    def __init__(
+            self,
+            name,
+            gamma=0.9             , # Passed to QTree
+            max_depth=10          , # Passed to QTree
+            proba_play=False      , # Use score as probability to paly card
+            consider_no_play=False, # Play no card if probability play
+            hash_results=True       # Hash on state, more time efficient
+    ):
+        self.name = name
+        self.q_tree = QTree( gamma=gamma, max_depth=max_depth )
+        self.card_fields = ['action','buy','draw','coin','vp']
+        self.q_tree.card_field_order = self.card_fields
+
+        # TODO: change during stage of game
+        self.card_field_weights = np.array([1.,2.,2.,10.,0.])
+
+        # Optionally, select with probability allocated to highest score
+        self._proba_play = proba_play
+
+        # Optionally, don't play any card
+        self._play_none = consider_no_play
+
+        # Used for avoiding doing the same costly analysis over and over
+        self._internal_var_tuple = self._set_internal_var_tuple()
+        self._hash_results = hash_results
+        self._saved_action_choices = {}
+
+    # Class variables that shouldn't change,
+    # Include in tuple hash for safety
+    def _set_internal_var_tuple(self):
+        tup = []
+        for key in sorted(self.__dict__.keys()):
+            if ( key != "q_tree" ):
+                tup.append( key )
+                if ( not isinstance(self.__dict__[key],(list,np.ndarray)) ):
+                    tup.append( self.__dict__[key] )
+                else:
+                    tup.append( tuple(self.__dict__[key]) )
+        return tuple(tup)
+
+    # Hashes the relevant state variables
+    def _get_state_tuple( self, inp_state_dict ):
+        tup = []
+        for key in self.card_fields:
+            tup.append( key )
+            tup.append( inp_state_dict[key] )
+        for pile in ['hand','draw','discard']:
+            name = '{}_pile'.format(pile)
+            tup.append(name)
+            counts = inp_state_dict[name].count_cards()
+            for key in sorted(counts.keys()):
+                tup.append(key)
+                tup.append(counts[key])
+        return tuple(tup)
+
+    # Unhashed function
+    def choose_action_time_inefficient( self, inp_state_dict ):
+        assert isinstance( inp_state_dict, dict )
+
+        reward_dict = {}
+        max_score = 0.
+        max_card = None
+        min_score = np.sum( self.card_field_weights ) * 1000
+        score_sum = 0.
+        for card in set(inp_state_dict['hand_pile'].stack):
+            if ( not self.q_tree.usable_card(card) ):
+                continue
+
+            score = self.q_tree.value_function(inp_state_dict,card)
+
+            w_score = np.sum( score * self.card_field_weights )
+            if ( w_score > max_score ):
+                max_score = w_score
+                max_card = card
+
+            if ( w_score < min_score ):
+                min_score = w_score
+
+            score_sum += w_score
+
+            reward_dict[card.name] = ( score, w_score )
+
+        if ( not self._proba_play ):
+            return max_card
+
+        # Weigh None as equally with lowest prob play
+        if ( self._play_none ):
+            reward_dict[None] = ( min_score, min_score )
+            score_sum += min_score
+
+        # Probability play, use score as weight so card play somewhat randomly picked
+        new_sum = 0.
+        pick_value = random.random() * score_sum
+        for card, score_tuple in reward_dict.items():
+            new_sum += score_tuple[1] # Weighted score
+            if ( new_sum > pick_value ):
+                if ( card is None ):
+                    return None
+                return dominion_cards.all_valid_cards[card]
+
+
+    def _choose_action_from_state_tuple( self, inp_tuple ):
+        if ( not self._proba_play ):
+            return self._saved_action_choices[inp_tuple]
+
+        # Probability play, use score as weight so card play somewhat randomly picked
+        this_tuple = self._saved_action_choices[inp_tuple]
+        score_sum = this_tuple[0]
+        this_tuple = this_tuple[1:]
+
+        new_sum = 0.
+        pick_value = random.random() * score_sum
+        for tup_pairs in this_tuple:
+            card = tup_pairs[0]
+            score = tup_pairs[1]
+            new_sum += score # Weighted score
+            if ( new_sum > pick_value ):
+                if ( card is None ):
+                    return None
+                return dominion_cards.all_valid_cards[card]
+
+    # Hashed solution
+    def choose_action_time_efficient( self, inp_state_dict ):
+        assert isinstance( inp_state_dict, dict )
+
+        state_dict_tuple = self._get_state_tuple( inp_state_dict )
+        comb_tuple = self._internal_var_tuple + state_dict_tuple
+        if (  comb_tuple in self._saved_action_choices ):
+            return self._choose_action_from_state_tuple( comb_tuple )
+
+        reward_dict = {}
+        max_score = 0.
+        max_card = None
+        min_score = np.sum( self.card_field_weights ) * 1000
+        score_sum = 0.
+        for card in set(inp_state_dict['hand_pile'].stack):
+            if ( not self.q_tree.usable_card(card) ):
+                continue
+
+            score = self.q_tree.value_function(inp_state_dict,card)
+
+            w_score = np.sum( score * self.card_field_weights )
+            if ( w_score > max_score ):
+                max_score = w_score
+                max_card = card
+
+            if ( w_score < min_score ):
+                min_score = w_score
+
+            score_sum += w_score
+
+            reward_dict[card.name] = w_score
+
+        if ( not self._proba_play ):
+            self._saved_action_choices[comb_tuple] = max_card
+
+        else:
+            # Weigh None as equally with lowest prob play
+            sorted_keys = sorted( reward_dict.keys() )
+            if ( self._play_none ):
+                sorted_keys = [None] + sorted_keys
+                reward_dict[None] = min_score
+                score_sum += min_score
+
+            tup_list = [score_sum]
+            for key in sorted_keys:
+                tup_list.append( ( key, reward_dict[key] ) )
+
+            self._saved_action_choices[comb_tuple] = tuple( tup_list )
+
+        return self._choose_action_from_state_tuple( comb_tuple )
+
+    # The function that should be called, selects function based on internal variable
+    def choose_action( self, inp_state_dict ):
+        if ( self._hash_results ):
+            return self.choose_action_time_efficient( inp_state_dict )
+        return self.choose_action_time_inefficient( inp_state_dict )
+
 
 action_brain_dict = {
     'random':ActionRandom,
     'attribute_prioritizer':ActionAttributePrioritizer,
+    'q_brain':QActionBrain,
 }

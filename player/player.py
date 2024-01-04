@@ -280,6 +280,19 @@ class Player:
 
         return drew_cards
 
+    def generate_turn_state(self):
+        out_dict = {}
+        out_dict['action'] = self.turn_action
+        out_dict['buy'   ] = self.turn_buy
+        out_dict['coin'  ] = self.turn_coin
+        out_dict['draw'  ] = self.turn_draw
+
+        out_dict['hand_pile'   ] = self.hand
+        out_dict['draw_pile'   ] = self.draw_pile
+        out_dict['discard_pile'] = self.discard_pile
+
+        return out_dict
+
     def do_actions(self,opponents,kingdom,trash):
         inp_params = {
             'player':self,
@@ -312,7 +325,8 @@ class Player:
                 ) for card in action_card_list])
             ))
 
-            selected_card = self.action_brain.choose_action( action_card_list )
+            turn_state_dict = self.generate_turn_state()
+            selected_card = self.action_brain.choose_action( turn_state_dict )
             acted_list.append( ("played",selected_card.name if selected_card is not None else None ) )
 
             if (selected_card is not None):
