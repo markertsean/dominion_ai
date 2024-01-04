@@ -116,6 +116,8 @@ class QTree(q_learning.QLearner):
         self.state_keys = set( self.card_field_order + ['hand_pile','draw_pile','discard_pile'] )
         self.debug=False
 
+        self._expected_count_dict = {}
+
     # Allows either passing action as string or DominionCard type, returns latter
     def convert_to_card( self, card_or_name ):
         assert isinstance(card_or_name,(str,cards.DominionCard))
@@ -144,6 +146,9 @@ class QTree(q_learning.QLearner):
         if ( ( k_pick <= 0 ) or ( n_card <= 0 ) ):
             return 0.
 
+        if ( (k_pick,n_card,n_other) in self._expected_count_dict ):
+            return self._expected_count_dict[(k_pick,n_card,n_other)]
+
         # Probability of drawing our card
         pc = n_card / ( 1. * n_card + n_other )
         pn = 1. - pc
@@ -157,7 +162,9 @@ class QTree(q_learning.QLearner):
         if ( n_other > 0 ):
             out_n = pn * ( 0. + self.expected_n_cards_from_count( k_pick-1, n_card  , n_other-1 ,depth+1) )
 
-        return out_c+out_n
+        self._expected_count_dict[(k_pick,n_card,n_other)] = out_c + out_n
+
+        return self._expected_count_dict[(k_pick,n_card,n_other)]
 
     def expected_n_cards_from_prob( self, card_name, k_pick, n_in_pile, prob_dict ):
         if (
