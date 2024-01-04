@@ -112,7 +112,7 @@ class QTree(q_learning.QLearner):
         self.gamma = gamma
         self.max_depth = max_depth
 
-        self.card_field_order = ['action','buy','draw','coin','vp']
+        self.card_field_order = ['action','buy','draw','coin']
         self.state_keys = set( self.card_field_order + ['hand_pile','draw_pile','discard_pile'] )
         self.debug=False
 
@@ -403,11 +403,11 @@ class QActionBrain(ActionBrain):
     ):
         self.name = name
         self.q_tree = QTree( gamma=gamma, max_depth=max_depth )
-        self.card_fields = ['action','buy','draw','coin','vp']
+        self.card_fields = ['action','buy','draw','coin']
         self.q_tree.card_field_order = self.card_fields
 
         # TODO: change during stage of game
-        self.card_field_weights = np.array([1.,2.,2.,10.,0.])
+        self.card_field_weights = np.array([1.,2.,2.,10.])
 
         # Optionally, select with probability allocated to highest score
         self._proba_play = proba_play

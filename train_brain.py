@@ -67,7 +67,17 @@ def init_players( inp_settings ):
                 action_brain = brain(order,tiebreak_cost)
 
             elif (inp_settings[ab_str] == 'q_brain'):
-                action_brain = action_brains.action_brain_dict['q_brain']
+                abq_str = ab_str + '_q_brain'
+                brain = action_brains.action_brain_dict['q_brain']
+
+                action_brain = brain(
+                    'q_brain',
+                    inp_settings[abq_str+'_gamma'],
+                    inp_settings[abq_str+'_depth'],
+                    inp_settings[abq_str+'_prob'],
+                    inp_settings[abq_str+'_none'],
+                    inp_settings[abq_str+'_hash'],
+                )
 
         player_list.append( Player(
             player_names[i],
