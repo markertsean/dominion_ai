@@ -89,14 +89,24 @@ def validate( inp ):
                 l_items = line.split(' ')
                 name = l_items[0]
 
+                assert ( name in action_brain_dict.keys() ),key+"must be one of: "+str(action_brain_dict.keys())+" recieved "+name
+                inp[key] = name
+                print(l_items)
+
                 if (name=='attribute_prioritizer'):
                     assert (len(l_items)==3),"attribute prioritizer must be of form:'attribute_prioritizer <card name,ability,buy,etc> <True/False>', recieved: {}".format(val)
                     inp[key] = name
                     inp[key+'_'+name+'_order'] = list(l_items[1].split(','))
                     inp[key+'_'+name+'_tiebreak_cost'] = l_items[2]
 
-                assert ( name in action_brain_dict.keys() ),key+"must be one of: "+str(action_brain_dict.keys())+" recieved "+name
-                inp[key] = name
+                elif (name=='q_brain'):
+                    assert (len(l_items)==6),"q_brain must be of form:'q_brain <gamma, float> <max_depth, int> <probability_play, bool> <play None, bool> <hash_results, bool>', recieved: {}".format(val)
+                    inp[key+'_'+name+'_gamma'] = interpret(l_items[1])
+                    inp[key+'_'+name+'_depth'] = interpret(l_items[2])
+                    inp[key+'_'+name+'_prob' ] = interpret(l_items[3])
+                    inp[key+'_'+name+'_none' ] = interpret(l_items[4])
+                    inp[key+'_'+name+'_hash' ] = interpret(l_items[5])
+
 
         key = key+"_output"
         if ( key in inp ):

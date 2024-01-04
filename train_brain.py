@@ -20,6 +20,8 @@ import util.input_output as io
 def init_players( inp_settings ):
     player_names = ['Alice','Bill','Cindy','Dan']
     player_list = []
+
+    # Loop over possible players, grab player strings from input
     for i in range(0,inp_settings['n_players']):
 
         p_str = "player_{}".format(i+1)
@@ -63,6 +65,9 @@ def init_players( inp_settings ):
                     tiebreak_cost = inp_settings[abap_str+"_tiebreak_cost"]
 
                 action_brain = brain(order,tiebreak_cost)
+
+            elif (inp_settings[ab_str] == 'q_brain'):
+                action_brain = action_brains.action_brain_dict['q_brain']
 
         player_list.append( Player(
             player_names[i],
