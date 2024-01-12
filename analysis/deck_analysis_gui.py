@@ -201,27 +201,31 @@ class GameWindow():
                 kingdom_dict[card] = cards.CardSupply( self.dc_all_cards[card], 1000 )
         self.kingdom_cards = list(kingdom_dict.keys())
 
-        self.hand = cards.CardPile('Hand')
-        self.draw = cards.CardPile('Draw')
+        self.hand    = cards.CardPile('Hand')
+        self.draw    = cards.CardPile('Draw')
         self.discard = cards.CardPile('Discard')
+        self.play    = cards.CardPile('Play')
 
         # Base game - 7 copper, 3 estate
         self.set_default_draw()
 
         self.pile_dict = {
             'kingdom': kingdom_dict,
-            'draw': self.draw,
-            'hand': self.hand,
+            'draw'   : self.draw,
+            'hand'   : self.hand,
             'discard': self.discard,
+            'play'   : self.play,
         }
         self.update_dict = {
-            'kingdom': ('deck',[self.draw,self.hand,self.discard]),
-            'draw': ('draw',[self.draw]),
-            'hand': ('hand',[self.hand]),
-            'discard': ('discard',[self.discard]),
+            'kingdom': ( 'deck'   , [self.draw,self.hand,self.discard] ),
+            'draw'   : ( 'draw'   , [self.draw] ),
+            'hand'   : ( 'hand'   , [self.hand] ),
+            'discard': ( 'discard', [self.discard] ),
+            'play'   : ( 'play'   , [self.play] ),
         }
 
-        self.layout_K = self.layout_D = self.layout_H = self.layout_X = self.layout_Deck = None
+        self.layout_K = self.layout_D    = self.layout_H = None
+        self.layout_X = self.layout_Deck = self.layout_P = None
         self.gen_layouts()
 
         self.window = None
@@ -329,7 +333,7 @@ class GameWindow():
             )
 
             if ( name != 'deck' ):
-                for other_name in ['kingdom','draw','hand','discard']:
+                for other_name in ['kingdom','draw','hand','discard','play']:
                     if ( name != other_name ):
                         self.window["move={}={}={}".format(name,other_name,card)].update(
                             visible = visible_row
@@ -344,7 +348,7 @@ class GameWindow():
             add_all=False,
             add_buttons=True,
     ):
-        assert (name_color_label_tuple_list is None) or (len(name_color_label_tuple_list) == 3)
+        assert (name_color_label_tuple_list is None) or (len(name_color_label_tuple_list) == 4)
         assert ( count != (cards_to_count is None) ), "If counting must provide list of card piles to count"
 
         card_count = {}
@@ -431,6 +435,7 @@ class GameWindow():
         d_color = "blue"
         h_color = "red"
         x_color = "dark green"
+        p_color = "purple"
         e_color = "white"
         section_title_font = ('Axial',20)
 
@@ -441,6 +446,7 @@ class GameWindow():
                 ( "draw"   , d_color, "D", ),
                 ( "hand"   , h_color, "H", ),
                 ( "discard", x_color, "X", ),
+                ( "play"   , p_color, "P", ),
             ],
             None,
             False,
@@ -456,6 +462,7 @@ class GameWindow():
                 ( "kingdom", k_color, "K", ),
                 ( "hand"   , h_color, "H", ),
                 ( "discard", x_color, "X", ),
+                ( "play"   , p_color, "P", ),
             ],
             [self.draw],
             True,
@@ -473,6 +480,7 @@ class GameWindow():
                 ( "kingdom", k_color, "K", ),
                 ( "draw"   , d_color, "D", ),
                 ( "discard", x_color, "X", ),
+                ( "play"   , p_color, "P", ),
             ],
             [self.hand],
             True,
@@ -490,6 +498,7 @@ class GameWindow():
                 ( "kingdom", k_color, "K", ),
                 ( "draw"   , d_color, "D", ),
                 ( "hand"   , h_color, "H", ),
+                ( "play"   , p_color, "P", ),
             ],
             [self.discard],
             True,
@@ -516,6 +525,25 @@ class GameWindow():
         )
         self.layout_Deck = sg.Column( layout_Deck + [ [ cards_Deck, stat_layout_Deck ] ] )
 
+        layout_P = [[sg.Text("Play",text_color=p_color,font=section_title_font)],[sg.HSeparator()]]
+        cards_P = self.gen_game_move_buttons(
+            "play",
+            [
+                ( "kingdom", k_color, "K", ),
+                ( "draw"   , d_color, "D", ),
+                ( "hand"   , h_color, "H", ),
+                ( "discard", x_color, "X", ),
+            ],
+            [self.play],
+            True,
+            True,
+            True,
+        )
+        cards_P = sg.Column(cards_P)
+        stat_layout_P = self.gen_deck_stats_layout( "play", [self.play] )
+        self.layout_P = sg.Column( layout_P + [ [ cards_P, stat_layout_P ] ] )
+
+
     def gen_window( self ):
         reset_button = sg.Button( "Reset", key="-reset-" )
         close_button = sg.Button( "Close", key="-close-" )
@@ -525,16 +553,17 @@ class GameWindow():
                 sg.Column([
                     [reset_button,sg.VSeparator(),close_button],
                     [self.layout_K],
+                    [self.layout_Deck],
                 ])
             ]
         ]
         mid_col = [
-            [self.layout_Deck],
+            [self.layout_P],
             [sg.HSeparator()],
-            [self.layout_D],
+            [self.layout_H],
         ]
         right_col = [
-            [self.layout_H],
+            [self.layout_D],
             [sg.HSeparator()],
             [self.layout_X],
         ]
@@ -566,6 +595,7 @@ class GameWindow():
                 self.draw.stack = []
                 self.hand.stack = []
                 self.discard.stack = []
+                self.play.stack = []
                 self.set_default_draw()
 
                 for name, pile_t in self.update_dict.items():
