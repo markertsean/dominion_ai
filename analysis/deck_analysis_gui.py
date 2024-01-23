@@ -256,8 +256,9 @@ class GameWindow():
         out_dict = {}
 
         for key, val in stat_dict.items():
-            out_dict[key] = (name_format_str+"{:0.3f}").format(key,val) if isinstance(val,float) \
-                else (name_format_str+"{:5d}").format(key,val)
+            new_key = key if (key != 'opponent_benefit') else 'opp_ben'
+            out_dict[new_key] = (name_format_str+"{:0.2f}").format(new_key,val) if isinstance(val,float) \
+                else (name_format_str+"{:5d}").format(new_key,val)
 
         return out_dict
 
