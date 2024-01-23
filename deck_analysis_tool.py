@@ -36,8 +36,14 @@ def main():
                     if ( kingdom_builder.kingdom_card_activation_dict[card] ):
                         cards_to_use[kind].append(card)
 
-            game_window = dag.GameWindow( cards_to_use )
+            game_window = dag.GameWindow( cards_to_use, mod_stats=kingdom_builder.mod_stats )
             game_window.run()
+
+            continue
+
+        elif ( event == "Kingdom=ModStats" ):
+
+            kingdom_builder.flip_mod_stats_button()
 
             continue
 

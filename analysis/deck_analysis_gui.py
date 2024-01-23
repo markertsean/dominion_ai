@@ -35,6 +35,8 @@ class KingdomSelectorWindow():
             self.game_card_dict,\
             self.all_cards_kind_dict = self.gen_default_card_dicts()
 
+        self.mod_stats = False
+
         self.window = None
         self.reset_window()
 
@@ -113,6 +115,13 @@ class KingdomSelectorWindow():
             i+=1
         return formatted_list
 
+    def flip_mod_stats_button( self ):
+        self.mod_stats = not self.mod_stats
+        self.window['Kingdom=ModStats'].update(
+            "Mod Stats: {}".format(
+                "On" if self.mod_stats else "Off"
+            )
+        )
 
     def gen_kingdom_display_layout( self, inp_game_card_list ):
         game_buttons = self.gen_selectable_card_buttons_from_kingdom(
@@ -160,8 +169,13 @@ class KingdomSelectorWindow():
 
         default_kingdom_selector_layout_end = [
             [sg.HSeparator(pad=(kingdom_select_pad_hspace,kingdom_select_pad_vspace))],
-            [sg.Button("Accept",key='Kingdom=Accept'),sg.Button("Reset",key='Kingdom=Reset')]
+            [
+                sg.Button("Accept",key='Kingdom=Accept'),
+                sg.Button("Reset",key='Kingdom=Reset'),
+                sg.Button("Mod Stats: Off",key='Kingdom=ModStats'),
+            ]
         ]
+        self.mod_stats = False
 
         return default_kingdom_selector_layout_start +         [
                 [
@@ -191,9 +205,11 @@ class KingdomSelectorWindow():
 
 
 class GameWindow():
-    def __init__( self, game_cards ):
+    def __init__( self, game_cards, mod_stats=False ):
 
         self.dc_all_cards = dominion_cards.all_valid_cards
+
+        self.mod_stats = mod_stats
 
         kingdom_dict = {}
         for kind, card_list in game_cards.items():
@@ -247,18 +263,46 @@ class GameWindow():
         analysis_deck = bf.analyze_deck( full_deck, normalize='readable' )
         return analysis_deck
 
+    # If mod button on, accept "_mod" parameters over not "_mod"
+    def mod_accepted( self, key, key_list ):
+        if ( not self.mod_stats ):
+            if ( key.endswith('_mod') ):
+                return False
+            return True
+
+        else:
+            if (
+                ( not key.endswith('_mod') ) and
+                ( key+"_mod" in key_list )
+            ):
+                return False
+            return True
+
 
     # Determines widest variable, float and int formats, saves as string
     def gen_stat_string_dict( self, stat_dict ):
-        max_char_len = max( [len(key) for key in stat_dict.keys()] )
+        key_overwrites = {
+            'opponent_benefit': 'opp_ben',
+            'junk_synergy': 'junk_syn',
+        }
+
+        all_keys = stat_dict.keys()
+        key_list = []
+        for key, val in stat_dict.items():
+            if ( self.mod_accepted(key,all_keys) ):
+                new_key = key if (key not in key_overwrites) else key_overwrites[key]
+                key_list.append(new_key)
+
+        max_char_len = max( [len(key) for key in key_list] )
         name_format_str = "{:"+str(max_char_len)+"s}: "
 
         out_dict = {}
 
         for key, val in stat_dict.items():
-            new_key = key if (key != 'opponent_benefit') else 'opp_ben'
-            out_dict[new_key] = (name_format_str+"{:0.2f}").format(new_key,val) if isinstance(val,float) \
-                else (name_format_str+"{:5d}").format(new_key,val)
+            if ( self.mod_accepted(key,all_keys) ):
+                new_key = key if (key not in key_overwrites) else key_overwrites[key]
+                out_dict[new_key] = (name_format_str+"{:0.2f}").format(new_key,val) if isinstance(val,float) \
+                    else (name_format_str+"{:5d}").format(new_key,val)
 
         return out_dict
 
@@ -274,8 +318,8 @@ class GameWindow():
     ):
         stat_strings = self.gen_stat_string_dict( stat_dict )
 
-        length = math.ceil( len(stat_dict) / float(cols) )
-        if ( (len(stat_dict) // cols) != length ):
+        length = math.ceil( len(stat_strings) / float(cols) )
+        if ( (len(stat_strings) // cols) != length ):
             length += 1
 
         formatted_list = []
