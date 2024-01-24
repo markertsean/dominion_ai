@@ -302,7 +302,7 @@ class GameWindow():
             if ( self.mod_accepted(key,all_keys) ):
                 new_key = key if (key not in key_overwrites) else key_overwrites[key]
                 out_dict[new_key] = (name_format_str+"{:0.2f}").format(new_key,val) if isinstance(val,float) \
-                    else (name_format_str+"{:5d}").format(new_key,val)
+                    else (name_format_str+"{:4d}").format(new_key,val)
 
         return out_dict
 
