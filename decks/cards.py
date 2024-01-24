@@ -170,6 +170,11 @@ class DominionCard(GenericCard):
 
         return numeric_flag_dict
 
+    def get_val(self,key):
+        assert key in ['action','buy','draw','coin','victory_points']
+        return ( 0 if self.__dict__[key] is None else self.__dict__[key])
+
+
 dominion_card_flag_groupings = {
     "action": [
         "reaction",

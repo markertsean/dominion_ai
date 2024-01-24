@@ -10,7 +10,7 @@ sys.path.append(project_path)
 
 from decks import cards,dominion_cards
 from brains import brain_functions as bf
-
+from brains import action_brains as ab
 
 class KingdomSelectorWindow():
     def __init__(self):
@@ -242,6 +242,16 @@ class GameWindow():
 
         self.layout_K = self.layout_D    = self.layout_H = None
         self.layout_X = self.layout_Deck = self.layout_P = None
+
+        self.layout_action = None
+        self.action_str = "Recommended Play: {}"
+        self.action_brain = ab.action_brain_dict['q_brain']("Dummy Brain")
+
+        self.turn_action = 1
+        self.turn_draw   = 0
+        self.turn_buy    = 0
+        self.turn_coin   = 0
+
         self.gen_layouts()
 
         self.window = None
@@ -348,9 +358,50 @@ class GameWindow():
         stat_layout_deck = self.gen_formatted_stat_list( name, analysis_deck )
         return stat_layout_deck
 
+    def generate_turn_state(self):
+        out_dict = {}
+        out_dict['action'] = self.turn_action
+        out_dict['buy'   ] = self.turn_buy
+        out_dict['coin'  ] = self.turn_coin
+        out_dict['draw'  ] = self.turn_draw
+
+        out_dict['hand_pile'   ] = self.hand
+        out_dict['draw_pile'   ] = self.draw
+        out_dict['discard_pile'] = self.discard
+
+        return out_dict
+
+    # Recommend card to play based on cards in hand
+    def update_action_recommendation( self, card_name ):
+        if ( self.play.n_cards == 0 ):
+            self.turn_action = 1
+            self.turn_buy    = 0
+            self.turn_coin   = 0
+            self.turn_draw   = 0
+            self.window["-action-"].update(self.action_str.format("None"))
+
+        if ( (card_name is None) or (card_name=='all') ):
+            return
+
+        card = self.dc_all_cards[card_name]
+        print("\tPLAYED {}".format(card.name))
+        self.turn_action += card.get_val('action') - 1
+        self.turn_buy    += card.get_val('buy'   )
+        self.turn_coin   += card.get_val('coin'  )
+        self.turn_draw   += card.get_val('draw'  )
+
+        action = self.action_brain.choose_action(
+            self.generate_turn_state()
+        )
+
+        if ( action is None ):
+            self.window["-action-"].update(self.action_str.format("None"))
+        else:
+            self.window["-action-"].update(self.action_str.format(action.name))
+        return
 
     # Perform update for pile_list = [hand,draw...]
-    def update_deck_stats( self, name, pile_list ):
+    def update_deck_stats( self, name, pile_list, card_name = None ):
         pile_count_list = [ pile.count_cards() for pile in pile_list ]
         full_deck = bf.combine_deck_count( pile_count_list )
 
@@ -383,6 +434,8 @@ class GameWindow():
                         self.window["move={}={}={}".format(name,other_name,card)].update(
                             visible = visible_row
                         )
+
+        self.update_action_recommendation( card_name )
 
     def gen_game_move_buttons(
             self,
@@ -588,6 +641,14 @@ class GameWindow():
         stat_layout_P = self.gen_deck_stats_layout( "play", [self.play] )
         self.layout_P = sg.Column( layout_P + [ [ cards_P, stat_layout_P ] ] )
 
+        # Display which action card best to play based on Q brain
+        self.layout_action = sg.Text(
+            self.action_str.format("None"),
+            font = ('Ubuntu Mono',16),
+            text_color = 'white',
+            key = "-action-",
+        )
+
 
     def gen_window( self ):
         reset_button = sg.Button( "Reset", key="-reset-" )
@@ -599,6 +660,7 @@ class GameWindow():
                     [reset_button,sg.VSeparator(),close_button],
                     [self.layout_K],
                     [self.layout_Deck],
+                    [self.layout_action]
                 ])
             ]
         ]
@@ -691,7 +753,7 @@ class GameWindow():
                     # Update stats
                     for update_name in [origin_pile,destination_pile]:
                         pile_to_update, piles = self.update_dict[update_name]
-                        self.update_deck_stats( pile_to_update, piles )
+                        self.update_deck_stats( pile_to_update, piles, card_name = card_name )
 
         self.window.close()
         return
