@@ -248,9 +248,17 @@ class GameWindow():
         self.action_brain = ab.action_brain_dict['q_brain']("Dummy Brain")
 
         self.turn_action = 1
-        self.turn_draw   = 0
         self.turn_buy    = 0
         self.turn_coin   = 0
+        self.turn_draw   = 0
+
+        self.layout_abcd = None
+        self.abcd_dict = {
+            'A':'turn_action',
+            'B':'turn_buy',
+            'C':'turn_coin',
+            'D':'turn_draw',
+        }
 
         self.gen_layouts()
 
@@ -371,24 +379,53 @@ class GameWindow():
 
         return out_dict
 
+    def update_action_button( self, c, value=0 ):
+        v = self.abcd_dict[c]
+        self.__dict__[v] = max(0,self.__dict__[v]+value)
+        self.window["{}=text".format(c)].update(self.get_letter_button(c))
+
+    def update_all_action_buttons( self ):
+        for c in ['A','B','C','D']:
+            self.update_action_button( c )
+
+    def reset_play_area( self ):
+        print("RESET PLAY")
+        self.turn_action = 1
+        self.turn_buy    = 0
+        self.turn_coin   = 0
+        self.turn_draw   = 0
+        self.window["-action-"].update(self.action_str.format("None"))
+        self.update_all_action_buttons()
+
+    def update_abcd( self, card_list, reverse=False ):
+        if ( isinstance( card_list, type(cards.DominionCard) ) ):
+            card_list = [card_list]
+
+        assert isinstance( card_list, list )
+
+        mod = 1
+        if reverse:
+            mod = -1
+
+        for card in card_list:
+            print("\tPLAYED {}".format(card.name))
+            self.turn_action += mod * ( card.get_val('action') - 1 )
+            self.turn_buy    += mod * ( card.get_val('buy'   )     )
+            self.turn_coin   += mod * ( card.get_val('coin'  )     )
+            self.turn_draw   += mod * ( card.get_val('draw'  )     )
+            self.update_all_action_buttons()
+
+    '''
+    When move all cards out of play area, reset all actions
+    Whem move any cards into play area, update
+    '''
     # Recommend card to play based on cards in hand
-    def update_action_recommendation( self, card_name ):
-        if ( self.play.n_cards == 0 ):
-            self.turn_action = 1
-            self.turn_buy    = 0
-            self.turn_coin   = 0
-            self.turn_draw   = 0
-            self.window["-action-"].update(self.action_str.format("None"))
-
-        if ( (card_name is None) or (card_name=='all') ):
-            return
-
-        card = self.dc_all_cards[card_name]
-        print("\tPLAYED {}".format(card.name))
-        self.turn_action += card.get_val('action') - 1
-        self.turn_buy    += card.get_val('buy'   )
-        self.turn_coin   += card.get_val('coin'  )
-        self.turn_draw   += card.get_val('draw'  )
+    def update_recommendation( self ):
+        #REMOVE
+        for pile_name, pile in self.pile_dict.items():
+            if (pile_name!='kingdom'):
+                print("\t",pile_name)
+                print("\t",pile.count_cards())
 
         action = self.action_brain.choose_action(
             self.generate_turn_state()
@@ -396,12 +433,13 @@ class GameWindow():
 
         if ( action is None ):
             self.window["-action-"].update(self.action_str.format("None"))
+            print("\tRECOMMEND {}".format("None"))
         else:
             self.window["-action-"].update(self.action_str.format(action.name))
-        return
+            print("\tRECOMMEND {}".format(action.name))
 
     # Perform update for pile_list = [hand,draw...]
-    def update_deck_stats( self, name, pile_list, card_name = None ):
+    def update_deck_stats( self, name, pile_list ):
         pile_count_list = [ pile.count_cards() for pile in pile_list ]
         full_deck = bf.combine_deck_count( pile_count_list )
 
@@ -434,8 +472,6 @@ class GameWindow():
                         self.window["move={}={}={}".format(name,other_name,card)].update(
                             visible = visible_row
                         )
-
-        self.update_action_recommendation( card_name )
 
     def gen_game_move_buttons(
             self,
@@ -526,6 +562,10 @@ class GameWindow():
         rotated_out_layout = [[x[i] for x in out_layout] for i in range(len(out_layout[0]))]
         new_out = [ sg.Column([ [col] for col in row ]) for row in rotated_out_layout ]
         return sg.Column( [new_out] )
+
+    def get_letter_button( self, c ):
+        assert c in ['A','B','C','D']
+        return '{:1s}: {:02d}'.format(c,self.__dict__[self.abcd_dict[c]])
 
     def gen_layouts( self ):
 
@@ -650,6 +690,25 @@ class GameWindow():
         )
 
 
+        tc = 'white'
+        f  = ('Ubuntu Mono',16)
+        self.layout_abcd = []
+        for c in ['A','B','C','D']:
+            self.layout_abcd.append(sg.Column([
+                [
+                    sg.Text(
+                        self.get_letter_button(c),
+                        key = "{}=text".format(c),
+                        font = f,
+                        text_color = tc,
+                    ),
+                ],
+                [
+                    sg.Button( "+", font=f, key="{}=inc".format(c) ),
+                    sg.Button( "-", font=f, key="{}=dec".format(c) ),
+                ]
+            ]))
+
     def gen_window( self ):
         reset_button = sg.Button( "Reset", key="-reset-" )
         close_button = sg.Button( "Close", key="-close-" )
@@ -660,7 +719,8 @@ class GameWindow():
                     [reset_button,sg.VSeparator(),close_button],
                     [self.layout_K],
                     [self.layout_Deck],
-                    [self.layout_action]
+                    [self.layout_action],
+                    self.layout_abcd,
                 ])
             ]
         ]
@@ -693,6 +753,7 @@ class GameWindow():
     def run( self ):
         while True:
             event, values = self.window.read()
+            print(event)
             # End program if user closes window or
             # presses the OK button
             if (event == sg.WIN_CLOSED):
@@ -711,6 +772,11 @@ class GameWindow():
 
             elif ((event=="-close-") or (event==sg.WIN_CLOSED)):
                 break
+
+            # Increment / decrement a variable
+            elif ( event.endswith("=inc") or event.endswith("=dec") ):
+                inc_dec = 1 if event.endswith("=inc") else -1
+                self.update_action_button( event[0], inc_dec )
 
             elif (event.startswith("move")):
                 e_parsed = event.split("=")
@@ -737,12 +803,27 @@ class GameWindow():
                             n_cards += val
 
                 if ( n_cards > 0 ):
+                    print("ORIGIN {}".format(origin_pile))
+                    print("DESTIN {}".format(destination_pile))
                     # Move card around
                     if ( isinstance(destination,cards.CardPile) ):
+                        new_cards = []
                         if ( card_name == 'all' ):
                             destination.stack += origin.stack
+                            new_cards = origin.stack
                         else:
                             destination.topdeck( self.dc_all_cards[card_name] )
+                            new_cards = [ self.dc_all_cards[card_name] ]
+
+                        # Put cards in play area, update stats
+                        if ( destination_pile=='play' ):
+                            self.update_abcd( new_cards )
+
+                        elif ( (origin_pile=='play') and (destination_pile=='hand') ):
+                            self.update_abcd( new_cards, reverse = True )
+
+                        elif ( (origin_pile=='draw') and (destination_pile=='hand') ):
+                            self.update_action_button( 'D', -len(new_cards) )
 
                     if ( isinstance(origin,cards.CardPile) ):
                         if ( card_name == 'all' ):
@@ -753,7 +834,18 @@ class GameWindow():
                     # Update stats
                     for update_name in [origin_pile,destination_pile]:
                         pile_to_update, piles = self.update_dict[update_name]
-                        self.update_deck_stats( pile_to_update, piles, card_name = card_name )
+                        self.update_deck_stats( pile_to_update, piles )
+
+                    # Emptied play area, reset action buy coin draw reccommendation
+                    if (
+                        #TODO: consider allowing pile to hand not resetting play area
+                        #(destination_pile!='hand') and
+                        (origin_pile=='play') and
+                        (self.play.n_cards()==0)
+                    ):
+                        self.reset_play_area()
+
+                    self.update_recommendation()
 
         self.window.close()
         return
