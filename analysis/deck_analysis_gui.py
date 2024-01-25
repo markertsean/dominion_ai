@@ -389,7 +389,6 @@ class GameWindow():
             self.update_action_button( c )
 
     def reset_play_area( self ):
-        print("RESET PLAY")
         self.turn_action = 1
         self.turn_buy    = 0
         self.turn_coin   = 0
@@ -408,7 +407,6 @@ class GameWindow():
             mod = -1
 
         for card in card_list:
-            print("\tPLAYED {}".format(card.name))
             self.turn_action += mod * ( card.get_val('action') - 1 )
             self.turn_buy    += mod * ( card.get_val('buy'   )     )
             self.turn_coin   += mod * ( card.get_val('coin'  )     )
@@ -421,22 +419,14 @@ class GameWindow():
     '''
     # Recommend card to play based on cards in hand
     def update_recommendation( self ):
-        #REMOVE
-        for pile_name, pile in self.pile_dict.items():
-            if (pile_name!='kingdom'):
-                print("\t",pile_name)
-                print("\t",pile.count_cards())
-
         action = self.action_brain.choose_action(
             self.generate_turn_state()
         )
 
         if ( action is None ):
             self.window["-action-"].update(self.action_str.format("None"))
-            print("\tRECOMMEND {}".format("None"))
         else:
             self.window["-action-"].update(self.action_str.format(action.name))
-            print("\tRECOMMEND {}".format(action.name))
 
     # Perform update for pile_list = [hand,draw...]
     def update_deck_stats( self, name, pile_list ):
@@ -578,7 +568,7 @@ class GameWindow():
         section_title_font = ('Axial',20)
 
         layout_K  = [[sg.Text("Kingdom",text_color=k_color,font=section_title_font)],[sg.HSeparator()]]
-        buttons_K = self.gen_game_move_buttons_col(
+        buttons_K = self.gen_game_move_buttons(
             "kingdom",
             [
                 ( "draw"   , d_color, "D", ),
@@ -591,7 +581,7 @@ class GameWindow():
             False,
             True,
         )
-        self.layout_K = sg.Column( layout_K + [ [ buttons_K ] ] )
+        self.layout_K = sg.Column( layout_K + [ [ sg.Column(buttons_K) ] ] )
 
         layout_D = [[sg.Text("Draw",text_color=d_color,font=section_title_font)],[sg.HSeparator()]]
         cards_D = self.gen_game_move_buttons(
@@ -753,7 +743,6 @@ class GameWindow():
     def run( self ):
         while True:
             event, values = self.window.read()
-            print(event)
             # End program if user closes window or
             # presses the OK button
             if (event == sg.WIN_CLOSED):
@@ -803,8 +792,6 @@ class GameWindow():
                             n_cards += val
 
                 if ( n_cards > 0 ):
-                    print("ORIGIN {}".format(origin_pile))
-                    print("DESTIN {}".format(destination_pile))
                     # Move card around
                     if ( isinstance(destination,cards.CardPile) ):
                         new_cards = []
