@@ -766,6 +766,7 @@ class GameWindow():
             elif ( event.endswith("=inc") or event.endswith("=dec") ):
                 inc_dec = 1 if event.endswith("=inc") else -1
                 self.update_action_button( event[0], inc_dec )
+                self.update_recommendation()
 
             elif (event.startswith("move")):
                 e_parsed = event.split("=")
